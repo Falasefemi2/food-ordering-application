@@ -13,8 +13,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { defineRelations } from "drizzle-orm";
 
-// ─── ENUMS ────────────────────────────────────────────────────────────────────
-
 export const roleEnum = pgEnum("role", [
 	"customer",
 	"driver",
@@ -110,8 +108,6 @@ export const walletTransactionTypeEnum = pgEnum("wallet_transaction_type", [
 	"debit",
 ]);
 
-// ─── TABLES ───────────────────────────────────────────────────────────────────
-
 export const users = pgTable(
 	"users",
 	{
@@ -119,8 +115,6 @@ export const users = pgTable(
 		firstName: varchar("first_name", { length: 100 }).notNull(),
 		lastName: varchar("last_name", { length: 100 }).notNull(),
 		email: varchar("email", { length: 255 }).notNull(),
-		// FIX: phoneNumber is nullable — unique index must be partial (handled in DB,
-		// we enforce uniqueness in app logic for non-null values via service layer)
 		phoneNumber: varchar("phone_number", { length: 50 }),
 		phoneVerified: boolean("phone_verified")
 			.default(false)
@@ -129,7 +123,6 @@ export const users = pgTable(
 		role: roleEnum().default("customer").notNull(),
 		avatarUrl: varchar("avatar_url", { length: 512 }),
 		isActive: boolean("is_active").default(true).notNull(),
-		// ADDED: wallet balance — denormalized for fast reads, mutated via walletTransactions
 		walletBalance: numeric("wallet_balance", {
 			precision: 12,
 			scale: 2,
@@ -146,8 +139,6 @@ export const users = pgTable(
 	},
 	(table) => [
 		uniqueIndex("users_email_uidx").on(table.email),
-		// FIX: removed unique index on phoneNumber — nullable columns + unique index
-		// causes duplicate null violations in PostgreSQL. Enforce in service layer instead.
 		index("users_phone_idx").on(table.phoneNumber),
 		index("users_role_idx").on(table.role),
 	],
@@ -192,7 +183,6 @@ export const addresses = pgTable(
 	(table) => [index("addresses_user_id_idx").on(table.userId)],
 );
 
-// ADDED: sessions table for JWT refresh token management
 export const sessions = pgTable(
 	"sessions",
 	{
@@ -200,16 +190,14 @@ export const sessions = pgTable(
 		userId: uuid("user_id")
 			.notNull()
 			.references(() => users.id, { onDelete: "cascade" }),
-		// Store hashed refresh token — never the raw token
 		refreshTokenHash: varchar("refresh_token_hash", {
 			length: 255,
 		}).notNull(),
 		userAgent: varchar("user_agent", { length: 512 }),
-		ipAddress: varchar("ip_address", { length: 45 }), // supports IPv6
+		ipAddress: varchar("ip_address", { length: 45 }),
 		expiresAt: timestamp("expires_at", {
 			withTimezone: true,
 		}).notNull(),
-		// null = active session; set to revoke
 		revokedAt: timestamp("revoked_at", { withTimezone: true }),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.defaultNow()
@@ -217,7 +205,6 @@ export const sessions = pgTable(
 	},
 	(table) => [
 		index("sessions_user_id_idx").on(table.userId),
-		// Fast lookup by token hash during refresh
 		index("sessions_refresh_token_hash_idx").on(
 			table.refreshTokenHash,
 		),
@@ -470,7 +457,7 @@ export const coupons = pgTable(
 			{
 				onDelete: "cascade",
 			},
-		), // null = platform-wide
+		),
 		code: varchar("code", { length: 50 }).notNull(),
 		discountType: couponTypeEnum().notNull(),
 		discountValue: numeric("discount_value", {
@@ -493,7 +480,7 @@ export const coupons = pgTable(
 		endDate: timestamp("end_date", {
 			withTimezone: true,
 		}).notNull(),
-		usageLimit: integer("usage_limit"), // null = unlimited
+		usageLimit: integer("usage_limit"),
 		usageCount: integer("usage_count").default(0).notNull(),
 		isActive: boolean("is_active").default(true).notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -546,8 +533,6 @@ export const orders = pgTable(
 			precision: 10,
 			scale: 2,
 		}).notNull(),
-		// Address snapshot — frozen at order time
-		// ADDED: deliveryAddressId for analytics / reorder UX (does not affect snapshot)
 		deliveryAddressId: uuid("delivery_address_id").references(
 			() => addresses.id,
 			{ onDelete: "set null" },
@@ -571,7 +556,6 @@ export const orders = pgTable(
 		paymentMethod: paymentMethodEnum().notNull(),
 		cancellationReason: text("cancellation_reason"),
 		cancellationSource: cancellationSourceEnum(),
-		// Status transition timestamps for SLA tracking
 		placedAt: timestamp("placed_at", { withTimezone: true }),
 		acceptedAt: timestamp("accepted_at", { withTimezone: true }),
 		preparedAt: timestamp("prepared_at", { withTimezone: true }),
@@ -610,16 +594,16 @@ export const orderItems = pgTable(
 				onDelete: "set null",
 			},
 		),
-		itemName: varchar("item_name", { length: 255 }).notNull(), // snapshot
+		itemName: varchar("item_name", { length: 255 }).notNull(),
 		quantity: integer("quantity").default(1).notNull(),
 		unitPrice: numeric("unit_price", {
 			precision: 10,
 			scale: 2,
-		}).notNull(), // snapshot
+		}).notNull(),
 		totalPrice: numeric("total_price", {
 			precision: 10,
 			scale: 2,
-		}).notNull(), // snapshot
+		}).notNull(),
 	},
 	(table) => [index("order_items_order_id_idx").on(table.orderId)],
 );
@@ -638,10 +622,10 @@ export const orderItemCustomizations = pgTable(
 		).references(() => customizationOptions.id, {
 			onDelete: "set null",
 		}),
-		optionName: varchar("option_name", { length: 100 }).notNull(), // snapshot
+		optionName: varchar("option_name", { length: 100 }).notNull(),
 		price: numeric("price", { precision: 10, scale: 2 })
 			.default("0.00")
-			.notNull(), // snapshot
+			.notNull(),
 	},
 	(table) => [
 		index("order_item_customizations_order_item_id_idx").on(
@@ -698,14 +682,13 @@ export const reviews = pgTable(
 			onDelete: "set null",
 		}),
 		reviewType: reviewTypeEnum().notNull(),
-		rating: integer("rating").notNull(), // validate 1–5 in service layer
+		rating: integer("rating").notNull(),
 		comment: text("comment"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.defaultNow()
 			.notNull(),
 	},
 	(table) => [
-		// FIX: enforce one review per order per type
 		uniqueIndex("reviews_order_id_review_type_uidx").on(
 			table.orderId,
 			table.reviewType,
@@ -732,11 +715,11 @@ export const payments = pgTable(
 		}).notNull(),
 		status: paymentStatusEnum().default("pending").notNull(),
 		paymentMethod: paymentMethodEnum().notNull(),
-		gateway: varchar("gateway", { length: 50 }).notNull(), // "paystack" | "flutterwave"
+		gateway: varchar("gateway", { length: 50 }).notNull(),
 		gatewayReference: varchar("gateway_reference", {
 			length: 255,
 		}).notNull(),
-		gatewayResponse: text("gateway_response"), // raw webhook payload for audit
+		gatewayResponse: text("gateway_response"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.defaultNow()
 			.notNull(),
@@ -753,7 +736,6 @@ export const payments = pgTable(
 	],
 );
 
-// ADDED: notifications table for push/in-app alerts
 export const notifications = pgTable(
 	"notifications",
 	{
@@ -764,9 +746,8 @@ export const notifications = pgTable(
 		type: notificationTypeEnum().notNull(),
 		title: varchar("title", { length: 255 }).notNull(),
 		body: text("body").notNull(),
-		// Polymorphic reference — e.g. orderId, promotionId
 		referenceId: uuid("reference_id"),
-		referenceType: varchar("reference_type", { length: 50 }), // "order" | "promo" etc.
+		referenceType: varchar("reference_type", { length: 50 }),
 		isRead: boolean("is_read").default(false).notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.defaultNow()
@@ -774,7 +755,6 @@ export const notifications = pgTable(
 	},
 	(table) => [
 		index("notifications_user_id_idx").on(table.userId),
-		// Fast unread badge count query
 		index("notifications_user_id_is_read_idx").on(
 			table.userId,
 			table.isRead,
@@ -782,8 +762,6 @@ export const notifications = pgTable(
 	],
 );
 
-// ADDED: wallet transaction ledger — source of truth for wallet balance
-// walletBalance on users is a denormalized cache; this is the audit trail
 export const walletTransactions = pgTable(
 	"wallet_transactions",
 	{
@@ -796,15 +774,13 @@ export const walletTransactions = pgTable(
 			precision: 12,
 			scale: 2,
 		}).notNull(),
-		// Balance after this transaction — enables point-in-time reconstruction
 		balanceAfter: numeric("balance_after", {
 			precision: 12,
 			scale: 2,
 		}).notNull(),
 		description: varchar("description", { length: 255 }).notNull(),
-		// What triggered this transaction
-		referenceId: uuid("reference_id"), // e.g. orderId, paymentId
-		referenceType: varchar("reference_type", { length: 50 }), // "order" | "topup" | "refund"
+		referenceId: uuid("reference_id"),
+		referenceType: varchar("reference_type", { length: 50 }),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.defaultNow()
 			.notNull(),
@@ -817,8 +793,6 @@ export const walletTransactions = pgTable(
 		),
 	],
 );
-
-// ─── RELATIONS ────────────────────────────────────────────────────────────────
 
 const schema = {
 	users,
