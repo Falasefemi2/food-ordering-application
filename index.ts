@@ -7,6 +7,10 @@ import { AuthHandlers } from "./src/auth/auth-handlers";
 import { AuthMiddlewareLayer } from "./src/auth/auth-middleware";
 import { DatabaseLive } from "./src/db";
 import { AuthLive } from "./src/auth/auth-layer";
+import { RestaurantHandlers } from "./src/restaurant/restaurant-handlers";
+import { RestaurantLive } from "./src/restaurant/restaurant-layer";
+import { AdminHandlers } from "./src/admin/admin-handlers";
+import { AdminLive } from "./src/admin/admin-layer";
 
 const InfraLive = DatabaseLive;
 
@@ -46,10 +50,19 @@ const HttpServerLayer = HttpRouter.serve(AllRoutes, {
 		),
 }).pipe(Layer.provide(BunHttpServer.layer({ port: 3000 })));
 
+const AuthMiddlewareWithDeps = AuthMiddlewareLayer.pipe(
+	Layer.provide(AuthLive),
+	Layer.provide(InfraLive),
+);
+
 const AppLayer = HttpServerLayer.pipe(
 	Layer.provide(AuthHandlers),
-	Layer.provide(AuthMiddlewareLayer),
+	Layer.provide(RestaurantHandlers),
+	Layer.provide(AdminHandlers),
+	Layer.provide(AuthMiddlewareWithDeps),
 	Layer.provide(AuthLive),
+	Layer.provide(RestaurantLive),
+	Layer.provide(AdminLive),
 	Layer.provide(InfraLive),
 );
 
