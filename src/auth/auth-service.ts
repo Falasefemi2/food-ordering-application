@@ -15,7 +15,7 @@ export interface RegisterInput {
 	email: string;
 	password: string;
 	phoneNumber?: string | undefined;
-	role?: "customer" | "driver" | "vendor" | undefined;
+	role?: "customer" | "driver" | "vendor" | "admin" | undefined;
 }
 
 export interface LoginInput {
