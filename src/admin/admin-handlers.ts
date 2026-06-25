@@ -4,6 +4,7 @@ import { Api } from "../api";
 import { AuthContext } from "../auth/auth-middleware";
 import { AdminService } from "./admin-service";
 import { ForbiddenError } from "../libs/errors";
+import { CacheService } from "../libs/cacheservice";
 
 const assertAdmin = (role: string) =>
 	role === "admin" || role === "support"
@@ -28,10 +29,10 @@ export const AdminHandlers = HttpApiBuilder.group(
 	"admin",
 	Effect.fn(function* (handlers) {
 		const admin = yield* AdminService;
+		const cache = yield* CacheService;
 
 		return (
 			handlers
-				// ── Restaurants ─────────────────────────────────────────────────────
 				.handle("listPendingRestaurants", () =>
 					Effect.gen(function* () {
 						const { role } =
@@ -83,8 +84,8 @@ export const AdminHandlers = HttpApiBuilder.group(
 					Effect.gen(function* () {
 						const { sub: adminId, role } =
 							yield* AuthContext;
-						yield* assertAdminOnly(role); // support cannot approve
-						return yield* admin
+						yield* assertAdminOnly(role);
+						const result = yield* admin
 							.approveRestaurant(
 								params.id,
 								adminId,
@@ -95,6 +96,11 @@ export const AdminHandlers = HttpApiBuilder.group(
 									Effect.orDie,
 								),
 							);
+						yield* cache.invalidateRestaurant(
+							params.id,
+						);
+						yield* cache.invalidateRestaurantList();
+						return result;
 					}),
 				)
 				.handle(
@@ -108,18 +114,24 @@ export const AdminHandlers = HttpApiBuilder.group(
 							yield* assertAdminOnly(
 								role,
 							);
-							return yield* admin
-								.rejectRestaurant(
-									params.id,
-									adminId,
-									payload.reason,
-								)
-								.pipe(
-									Effect.catchTag(
-										"DbError",
-										Effect.orDie,
-									),
-								);
+							const result =
+								yield* admin
+									.rejectRestaurant(
+										params.id,
+										adminId,
+										payload.reason,
+									)
+									.pipe(
+										Effect.catchTag(
+											"DbError",
+											Effect.orDie,
+										),
+									);
+							yield* cache.invalidateRestaurant(
+								params.id,
+							);
+							yield* cache.invalidateRestaurantList();
+							return result;
 						}),
 				)
 				.handle(
@@ -133,18 +145,24 @@ export const AdminHandlers = HttpApiBuilder.group(
 							yield* assertAdminOnly(
 								role,
 							);
-							return yield* admin
-								.suspendRestaurant(
-									params.id,
-									adminId,
-									payload.reason,
-								)
-								.pipe(
-									Effect.catchTag(
-										"DbError",
-										Effect.orDie,
-									),
-								);
+							const result =
+								yield* admin
+									.suspendRestaurant(
+										params.id,
+										adminId,
+										payload.reason,
+									)
+									.pipe(
+										Effect.catchTag(
+											"DbError",
+											Effect.orDie,
+										),
+									);
+							yield* cache.invalidateRestaurant(
+								params.id,
+							);
+							yield* cache.invalidateRestaurantList();
+							return result;
 						}),
 				)
 				.handle(

@@ -1,6 +1,6 @@
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import { eq, and, isNull, inArray } from "drizzle-orm";
+import { eq, and, isNull, inArray, count } from "drizzle-orm";
 import {
 	RestaurantService,
 	type RestaurantServiceShape,
@@ -900,59 +900,94 @@ export const RestaurantLive = Layer.effect(
 				});
 
 		const listRestaurants: RestaurantServiceShape["listRestaurants"] =
-			(filters) =>
+			(pagination, filters) =>
 				Effect.gen(function* () {
-					const rows = yield* dbQuery(
+					const { page, limit } = pagination;
+					const offset = (page - 1) * limit;
+
+					const conditions = and(
+						eq(
+							restaurants.approvalStatus,
+							"approved",
+						),
+						isNull(restaurants.deletedAt),
+						filters?.city
+							? eq(
+									restaurants.city,
+									filters.city,
+								)
+							: undefined,
+						filters?.isOpen !== undefined
+							? eq(
+									restaurants.isOpen,
+									filters.isOpen,
+								)
+							: undefined,
+					);
+					const publicRestaurantSelect = {
+						id: restaurants.id,
+						name: restaurants.name,
+						description:
+							restaurants.description,
+						logoUrl: restaurants.logoUrl,
+						bannerUrl: restaurants.bannerUrl,
+						city: restaurants.city,
+						state: restaurants.state,
+						latitude: restaurants.latitude,
+						longitude: restaurants.longitude,
+						isOpen: restaurants.isOpen,
+						openingTime:
+							restaurants.openingTime,
+						closingTime:
+							restaurants.closingTime,
+						estimatedPrepTime:
+							restaurants.estimatedPrepTime,
+						ratingAvg: restaurants.ratingAvg,
+						ratingCount:
+							restaurants.ratingCount,
+					};
+
+					const [totalResult] = yield* dbQuery(
 						db
 							.select({
-								id: restaurants.id,
-								name: restaurants.name,
-								description:
-									restaurants.description,
-								logoUrl: restaurants.logoUrl,
-								bannerUrl: restaurants.bannerUrl,
-								city: restaurants.city,
-								state: restaurants.state,
-								latitude: restaurants.latitude,
-								longitude: restaurants.longitude,
-								isOpen: restaurants.isOpen,
-								openingTime:
-									restaurants.openingTime,
-								closingTime:
-									restaurants.closingTime,
-								estimatedPrepTime:
-									restaurants.estimatedPrepTime,
-								ratingAvg: restaurants.ratingAvg,
-								ratingCount:
-									restaurants.ratingCount,
+								count: count(),
 							})
 							.from(restaurants)
-							.where(
-								and(
-									eq(
-										restaurants.approvalStatus,
-										"approved",
-									),
-									isNull(
-										restaurants.deletedAt,
-									),
-									filters?.city
-										? eq(
-												restaurants.city,
-												filters.city,
-											)
-										: undefined,
-									filters?.isOpen !==
-										undefined
-										? eq(
-												restaurants.isOpen,
-												filters.isOpen,
-											)
-										: undefined,
-								),
-							),
+							.where(conditions),
 					);
-					return rows.map(toPublicRestaurantRow);
+
+					const rows = yield* dbQuery(
+						db
+							.select(
+								publicRestaurantSelect,
+							)
+							.from(restaurants)
+							.where(conditions)
+							.limit(limit)
+							.offset(offset),
+					);
+
+					const total = Number(
+						totalResult?.count,
+					);
+
+					return {
+						data: rows.map(
+							toPublicRestaurantRow,
+						),
+						total,
+						page,
+						limit,
+						totalPages: Math.ceil(
+							total / limit,
+						),
+						hasNext:
+							page <
+							Math.ceil(
+								total / limit,
+							),
+						hasPrev: page > 1,
+					};
 				});
 
 		const getRestaurant: RestaurantServiceShape["getRestaurant"] = (

@@ -10,6 +10,7 @@ export class UnauthorizedError extends Schema.TaggedErrorClass<UnauthorizedError
 	{
 		message: Schema.String,
 	},
+	{ httpApiStatus: 401 },
 ) {}
 
 export class ForbiddenError extends Schema.TaggedErrorClass<ForbiddenError>()(
@@ -17,6 +18,7 @@ export class ForbiddenError extends Schema.TaggedErrorClass<ForbiddenError>()(
 	{
 		message: Schema.String,
 	},
+	{ httpApiStatus: 403 },
 ) {}
 
 export class TokenExpiredError extends Schema.TaggedErrorClass<TokenExpiredError>()(
@@ -39,6 +41,7 @@ export class NotFoundError extends Schema.TaggedErrorClass<NotFoundError>()(
 		resource: Schema.String,
 		id: Schema.optional(Schema.String),
 	},
+	{ httpApiStatus: 404 },
 ) {}
 
 export class ConflictError extends Schema.TaggedErrorClass<ConflictError>()(
@@ -46,6 +49,7 @@ export class ConflictError extends Schema.TaggedErrorClass<ConflictError>()(
 	{
 		message: Schema.String,
 	},
+	{ httpApiStatus: 409 },
 ) {}
 
 export class ValidationError extends Schema.TaggedErrorClass<ValidationError>()(
@@ -66,4 +70,5 @@ export class BusinessRuleError extends Schema.TaggedErrorClass<BusinessRuleError
 	{
 		message: Schema.String,
 	},
+	{ httpApiStatus: 422 },
 ) {}

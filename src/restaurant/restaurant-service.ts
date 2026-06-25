@@ -7,6 +7,7 @@ import type {
 	ForbiddenError,
 	BusinessRuleError,
 } from "../libs/errors";
+import type { PaginatedResult, PaginationParams } from "../libs/types";
 
 export interface CreateRestaurantInput {
 	name: string;
@@ -330,10 +331,13 @@ export interface RestaurantServiceShape {
 		ownerId: string,
 	) => Effect.Effect<void, DbError | NotFoundError | ForbiddenError>;
 
-	listRestaurants: (filters?: {
-		city?: string;
-		isOpen?: boolean;
-	}) => Effect.Effect<PublicRestaurantRow[], DbError>;
+	listRestaurants: (
+		pagination: PaginationParams,
+		filters?: {
+			city?: string;
+			isOpen?: boolean;
+		},
+	) => Effect.Effect<PaginatedResult<PublicRestaurantRow>, DbError>;
 
 	getRestaurant: (
 		restaurantId: string,

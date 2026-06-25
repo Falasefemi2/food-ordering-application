@@ -1,5 +1,7 @@
 import * as Schema from "effect/Schema";
 import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
+import { RateLimiter } from "effect/unstable/persistence";
+import { HttpApiSchema } from "effect/unstable/httpapi";
 import {
 	ConflictError,
 	InvalidTokenError,
@@ -13,6 +15,12 @@ const TokenPair = Schema.Struct({
 	refreshToken: Schema.String,
 });
 
+const AuthSuccess = Schema.Struct({
+	accessToken: Schema.String,
+	refreshToken: Schema.String,
+	userId: Schema.String,
+});
+
 const UserProfile = Schema.Struct({
 	id: Schema.String,
 	email: Schema.String,
@@ -22,6 +30,10 @@ const UserProfile = Schema.Struct({
 	walletBalance: Schema.String,
 	createdAt: Schema.String,
 });
+
+const RateLimitError = RateLimiter.RateLimiterError.pipe(
+	HttpApiSchema.status(429),
+);
 
 export class AuthApiGroup extends HttpApiGroup.make("auth")
 	.add(
@@ -60,8 +72,8 @@ export class AuthApiGroup extends HttpApiGroup.make("auth")
 					]),
 				),
 			}),
-			success: TokenPair,
-			error: [ConflictError],
+			success: AuthSuccess,
+			error: [ConflictError, RateLimitError],
 		}),
 	)
 	.add(
@@ -78,8 +90,8 @@ export class AuthApiGroup extends HttpApiGroup.make("auth")
 					Schema.check(Schema.isMinLength(1)),
 				),
 			}),
-			success: TokenPair,
-			error: [UnauthorizedError],
+			success: AuthSuccess,
+			error: [UnauthorizedError, RateLimitError],
 		}),
 	)
 	.add(
@@ -92,6 +104,7 @@ export class AuthApiGroup extends HttpApiGroup.make("auth")
 				InvalidTokenError,
 				TokenExpiredError,
 				UnauthorizedError,
+				RateLimitError,
 			],
 		}),
 	)
