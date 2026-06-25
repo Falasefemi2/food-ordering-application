@@ -14,6 +14,8 @@ import { AdminLive } from "./src/admin/admin-layer";
 import { LoggerLayer } from "./src/libs/loggingservice";
 import { CacheLive } from "./src/libs/cacheservice";
 import { RateLimiterLive } from "./src/libs/ratelimit";
+import { ImageUploadLive } from "./src/libs/imageservice";
+import { RestaurantUploadHandlers } from "./src/restaurant/restaurant-upload-handlers";
 
 const InfraLive = DatabaseLive;
 
@@ -61,6 +63,7 @@ const AuthMiddlewareWithDeps = AuthMiddlewareLayer.pipe(
 const AppLayer = HttpServerLayer.pipe(
 	Layer.provide(AuthHandlers),
 	Layer.provide(RestaurantHandlers),
+	Layer.provide(RestaurantUploadHandlers),
 	Layer.provide(AdminHandlers),
 	Layer.provide(AuthMiddlewareWithDeps),
 	Layer.provide(AuthLive),
@@ -68,6 +71,7 @@ const AppLayer = HttpServerLayer.pipe(
 	Layer.provide(AdminLive),
 	Layer.provide(CacheLive),
 	Layer.provide(RateLimiterLive),
+	Layer.provide(ImageUploadLive),
 	Layer.provide(InfraLive),
 	Layer.provide(LoggerLayer),
 );

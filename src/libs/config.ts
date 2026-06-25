@@ -13,6 +13,9 @@ export class EnvConfig extends Schema.Class<EnvConfig>("EnvConfig")({
 	JWT_ACCESS_EXPIRES_IN: Schema.String,
 	JWT_REFRESH_EXPIRES_IN: Schema.String,
 	PORT: Schema.String,
+	CLOUDINARY_CLOUD_NAME: Schema.String,
+	CLOUDINARY_API_KEY: Schema.String,
+	CLOUDINARY_API_SECRET: Schema.String,
 }) {}
 
 export const loadConfig = Schema.decodeUnknownExit(EnvConfig)(process.env).pipe(
