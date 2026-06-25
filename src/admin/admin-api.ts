@@ -27,7 +27,7 @@ const AdminRestaurantResponse = Schema.Struct({
 	openingTime: Schema.String,
 	closingTime: Schema.String,
 	estimatedPrepTime: Schema.Number,
-	commissionRate: Schema.String, // visible to admin only
+	commissionRate: Schema.String,
 	ratingAvg: Schema.String,
 	ratingCount: Schema.Number,
 	ownerEmail: Schema.String,

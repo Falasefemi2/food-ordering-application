@@ -11,6 +11,9 @@ import { RestaurantHandlers } from "./src/restaurant/restaurant-handlers";
 import { RestaurantLive } from "./src/restaurant/restaurant-layer";
 import { AdminHandlers } from "./src/admin/admin-handlers";
 import { AdminLive } from "./src/admin/admin-layer";
+import { LoggerLayer } from "./src/libs/loggingservice";
+import { CacheLive } from "./src/libs/cacheservice";
+import { RateLimiterLive } from "./src/libs/ratelimit";
 
 const InfraLive = DatabaseLive;
 
@@ -63,7 +66,10 @@ const AppLayer = HttpServerLayer.pipe(
 	Layer.provide(AuthLive),
 	Layer.provide(RestaurantLive),
 	Layer.provide(AdminLive),
+	Layer.provide(CacheLive),
+	Layer.provide(RateLimiterLive),
 	Layer.provide(InfraLive),
+	Layer.provide(LoggerLayer),
 );
 
 BunRuntime.runMain(Layer.launch(AppLayer));

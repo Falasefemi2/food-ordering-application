@@ -4,6 +4,7 @@ import { Api } from "../api";
 import { AuthContext } from "../auth/auth-middleware";
 import { RestaurantService } from "./restaurant-service";
 import { ForbiddenError } from "../libs/errors";
+import { CacheService, CacheKeys } from "../libs/cacheservice";
 
 const vendorOnly = (role: string) =>
 	role === "vendor"
@@ -19,27 +20,61 @@ export const RestaurantHandlers = HttpApiBuilder.group(
 	"restaurant",
 	Effect.fn(function* (handlers) {
 		const restaurant = yield* RestaurantService;
+		const cache = yield* CacheService;
 
 		return handlers
-			.handle("listRestaurants", () =>
-				restaurant
-					.listRestaurants()
-					.pipe(
-						Effect.catchTag(
-							"DbError",
-							Effect.orDie,
-						),
-					),
+			.handle("listRestaurants", ({ query }) =>
+				Effect.gen(function* () {
+					const page = Number(query.page ?? 1);
+					const limit = Number(query.limit ?? 20);
+
+					const key = CacheKeys.restaurantList(
+						page,
+						limit,
+						query.city,
+						query.isOpen,
+					);
+
+					return yield* cache.getRestaurantList(
+						key,
+						() =>
+							restaurant
+								.listRestaurants(
+									{
+										page,
+										limit,
+									},
+									{
+										city: query.city,
+										isOpen: query.isOpen,
+									},
+								)
+								.pipe(
+									Effect.catchTag(
+										"DbError",
+										Effect.orDie,
+									),
+								),
+					);
+				}),
 			)
 			.handle("getRestaurant", ({ params }) =>
-				restaurant
-					.getRestaurant(params.id)
-					.pipe(
-						Effect.catchTag(
-							"DbError",
-							Effect.orDie,
-						),
-					),
+				Effect.gen(function* () {
+					const key = CacheKeys.restaurantDetail(
+						params.id,
+					);
+					return yield* cache.getRestaurantDetail(
+						key,
+						() =>
+							restaurant
+								.getRestaurant(
+									params.id,
+								)
+								.pipe(
+									Effect.orDie,
+								),
+					);
+				}),
 			)
 			.handle("createRestaurant", ({ payload }) =>
 				Effect.gen(function* () {

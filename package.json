@@ -16,16 +16,17 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@effect/platform-bun": "4.0.0-beta.85",
+    "@effect/platform-bun": "^4.0.0-beta.88",
+    "@effect/platform-node": "^4.0.0-beta.88",
     "@effect/sql-pg": "4.0.0-beta.85",
     "@types/pg": "^8.20.0",
+    "argon2": "^0.44.0",
     "dotenv": "^17.4.2",
-    "effect": "4.0.0-beta.85",
     "drizzle-kit": "1.0.0-rc.2",
     "drizzle-orm": "1.0.0-rc.2",
-    "pg": "^8.22.0",
-    "argon2": "^0.44.0",
-    "jose": "^6.0.11"
+    "effect": "4.0.0-beta.85",
+    "jose": "^6.0.11",
+    "pg": "^8.22.0"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",

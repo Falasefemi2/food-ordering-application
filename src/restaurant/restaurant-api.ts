@@ -145,10 +145,40 @@ const TimePattern = Schema.String.pipe(
 	Schema.check(Schema.isPattern(/^\d{2}:\d{2}$/)),
 );
 
+export const PaginationSchema = Schema.Struct({
+	page: Schema.optional(
+		Schema.NumberFromString.pipe(
+			Schema.check(Schema.isGreaterThanOrEqualTo(1)),
+		),
+	),
+	limit: Schema.optional(
+		Schema.NumberFromString.pipe(
+			Schema.check(Schema.isGreaterThanOrEqualTo(1)),
+			Schema.check(Schema.isLessThanOrEqualTo(100)),
+		),
+	),
+
+	city: Schema.optional(Schema.String),
+	isOpen: Schema.optional(Schema.Boolean),
+});
+
+const PaginatedRestaurantSchema = Schema.Struct({
+	data: Schema.Array(PublicRestaurantResponse),
+	total: Schema.Number,
+	page: Schema.Number,
+	limit: Schema.Number,
+	totalPages: Schema.Number,
+	hasNext: Schema.Boolean,
+	hasPrev: Schema.Boolean,
+});
+
 export class RestaurantApiGroup extends HttpApiGroup.make("restaurant")
 	.add(
 		HttpApiEndpoint.get("listRestaurants", "/restaurants", {
-			success: Schema.Array(PublicRestaurantResponse),
+			query: Schema.Struct({
+				...PaginationSchema.fields,
+			}),
+			success: PaginatedRestaurantSchema,
 			error: [],
 		}),
 	)

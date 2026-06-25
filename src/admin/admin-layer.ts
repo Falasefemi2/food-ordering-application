@@ -354,7 +354,7 @@ export const AdminLive = Layer.effect(
 				Effect.gen(function* () {
 					yield* getAdminRestaurantRow(
 						restaurantId,
-					); // verifies exists
+					);
 					yield* dbQuery(
 						db
 							.update(restaurants)
@@ -383,7 +383,7 @@ export const AdminLive = Layer.effect(
 				Effect.gen(function* () {
 					yield* getAdminRestaurantRow(
 						restaurantId,
-					); // verifies exists
+					);
 					yield* dbQuery(
 						db
 							.update(restaurants)
