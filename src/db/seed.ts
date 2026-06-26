@@ -1,6 +1,6 @@
-import { Effect } from "effect";
-import { eq } from "drizzle-orm";
 import { BunRuntime } from "@effect/platform-bun";
+import { eq } from "drizzle-orm";
+import { Effect } from "effect";
 import { DatabaseLive, PgDatabase } from "./index";
 import { users } from "./schema";
 
@@ -33,9 +33,7 @@ const seed = Effect.gen(function* () {
 	console.log("Admin seeded successfully");
 	console.log("   Email:    admin@chowdeck.com");
 	console.log("   Password: admin123");
-	console.log(
-		"   !  Change this password before deploying to production",
-	);
+	console.log("   !  Change this password before deploying to production");
 });
 
 BunRuntime.runMain(seed.pipe(Effect.provide(DatabaseLive)));

@@ -1,11 +1,11 @@
 import * as Context from "effect/Context";
-import * as Effect from "effect/Effect";
+import type * as Effect from "effect/Effect";
 import type {
-	DbError,
-	NotFoundError,
-	ConflictError,
-	ForbiddenError,
 	BusinessRuleError,
+	ConflictError,
+	DbError,
+	ForbiddenError,
+	NotFoundError,
 } from "../libs/errors";
 import type { PaginatedResult, PaginationParams } from "../libs/types";
 
@@ -197,10 +197,7 @@ export interface RestaurantServiceShape {
 			description?: string;
 			sortOrder?: number;
 		},
-	) => Effect.Effect<
-		MenuCategoryRow,
-		DbError | NotFoundError | ForbiddenError
-	>;
+	) => Effect.Effect<MenuCategoryRow, DbError | NotFoundError | ForbiddenError>;
 
 	updateCategory: (
 		restaurantId: string,
@@ -212,10 +209,7 @@ export interface RestaurantServiceShape {
 			sortOrder?: number;
 			isActive?: boolean;
 		},
-	) => Effect.Effect<
-		MenuCategoryRow,
-		DbError | NotFoundError | ForbiddenError
-	>;
+	) => Effect.Effect<MenuCategoryRow, DbError | NotFoundError | ForbiddenError>;
 
 	deleteCategory: (
 		restaurantId: string,
@@ -234,10 +228,7 @@ export interface RestaurantServiceShape {
 			isVegetarian?: boolean;
 			calories?: number;
 		},
-	) => Effect.Effect<
-		MenuItemRow,
-		DbError | NotFoundError | ForbiddenError
-	>;
+	) => Effect.Effect<MenuItemRow, DbError | NotFoundError | ForbiddenError>;
 
 	updateMenuItem: (
 		restaurantId: string,
@@ -251,10 +242,7 @@ export interface RestaurantServiceShape {
 			isVegetarian?: boolean;
 			calories?: number;
 		},
-	) => Effect.Effect<
-		MenuItemRow,
-		DbError | NotFoundError | ForbiddenError
-	>;
+	) => Effect.Effect<MenuItemRow, DbError | NotFoundError | ForbiddenError>;
 
 	deleteMenuItem: (
 		restaurantId: string,

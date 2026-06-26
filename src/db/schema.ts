@@ -1,17 +1,17 @@
+import { defineRelations } from "drizzle-orm";
 import {
-	pgTable,
-	uuid,
-	varchar,
-	text,
-	pgEnum,
+	boolean,
+	index,
 	integer,
 	numeric,
-	boolean,
+	pgEnum,
+	pgTable,
+	text,
 	timestamp,
-	index,
 	uniqueIndex,
+	uuid,
+	varchar,
 } from "drizzle-orm/pg-core";
-import { defineRelations } from "drizzle-orm";
 
 export const roleEnum = pgEnum("role", [
 	"customer",
@@ -116,9 +116,7 @@ export const users = pgTable(
 		lastName: varchar("last_name", { length: 100 }).notNull(),
 		email: varchar("email", { length: 255 }).notNull(),
 		phoneNumber: varchar("phone_number", { length: 50 }),
-		phoneVerified: boolean("phone_verified")
-			.default(false)
-			.notNull(),
+		phoneVerified: boolean("phone_verified").default(false).notNull(),
 		passwordHash: varchar("password_hash", { length: 255 }),
 		role: roleEnum().default("customer").notNull(),
 		avatarUrl: varchar("avatar_url", { length: 512 }),
@@ -151,18 +149,14 @@ export const addresses = pgTable(
 		userId: uuid("user_id")
 			.notNull()
 			.references(() => users.id, { onDelete: "cascade" }),
-		label: varchar("label", { length: 50 })
-			.default("Home")
-			.notNull(),
+		label: varchar("label", { length: 50 }).default("Home").notNull(),
 		addressLine1: varchar("address_line1", {
 			length: 255,
 		}).notNull(),
 		addressLine2: varchar("address_line2", { length: 255 }),
 		city: varchar("city", { length: 100 }).notNull(),
 		state: varchar("state", { length: 100 }).notNull(),
-		country: varchar("country", { length: 100 })
-			.default("Nigeria")
-			.notNull(),
+		country: varchar("country", { length: 100 }).default("Nigeria").notNull(),
 		postalCode: varchar("postal_code", { length: 20 }),
 		latitude: numeric("latitude", {
 			precision: 9,
@@ -205,9 +199,7 @@ export const sessions = pgTable(
 	},
 	(table) => [
 		index("sessions_user_id_idx").on(table.userId),
-		index("sessions_refresh_token_hash_idx").on(
-			table.refreshTokenHash,
-		),
+		index("sessions_refresh_token_hash_idx").on(table.refreshTokenHash),
 	],
 );
 
@@ -227,12 +219,8 @@ export const restaurants = pgTable(
 		addressLine: varchar("address_line", { length: 255 }).notNull(),
 		city: varchar("city", { length: 100 }).notNull(),
 		state: varchar("state", { length: 100 }).notNull(),
-		country: varchar("country", { length: 100 })
-			.default("Nigeria")
-			.notNull(),
-		approvalStatus: restaurantApprovalEnum()
-			.default("pending")
-			.notNull(),
+		country: varchar("country", { length: 100 }).default("Nigeria").notNull(),
+		approvalStatus: restaurantApprovalEnum().default("pending").notNull(),
 		rejectionReason: text("rejection_reason"),
 		latitude: numeric("latitude", {
 			precision: 9,
@@ -245,9 +233,7 @@ export const restaurants = pgTable(
 		isOpen: boolean("is_open").default(true).notNull(),
 		openingTime: varchar("opening_time", { length: 5 }).notNull(), // "HH:MM"
 		closingTime: varchar("closing_time", { length: 5 }).notNull(), // "HH:MM"
-		estimatedPrepTime: integer("estimated_prep_time")
-			.default(20)
-			.notNull(), // minutes
+		estimatedPrepTime: integer("estimated_prep_time").default(20).notNull(), // minutes
 		commissionRate: numeric("commission_rate", {
 			precision: 4,
 			scale: 2,
@@ -268,9 +254,7 @@ export const restaurants = pgTable(
 	},
 	(table) => [
 		index("restaurants_owner_id_idx").on(table.ownerId),
-		index("restaurants_approval_status_idx").on(
-			table.approvalStatus,
-		),
+		index("restaurants_approval_status_idx").on(table.approvalStatus),
 		index("restaurants_city_idx").on(table.city),
 	],
 );
@@ -294,9 +278,7 @@ export const drivers = pgTable(
 		nationalIdImageUrl: varchar("national_id_image_url", {
 			length: 512,
 		}),
-		approvalStatus: driverApprovalStatusEnum()
-			.default("pending")
-			.notNull(),
+		approvalStatus: driverApprovalStatusEnum().default("pending").notNull(),
 		rejectionReason: text("rejection_reason"),
 		approvedAt: timestamp("approved_at", { withTimezone: true }),
 		approvedBy: uuid("approved_by").references(() => users.id),
@@ -316,9 +298,7 @@ export const drivers = pgTable(
 			.default("0.00")
 			.notNull(),
 		ratingCount: integer("rating_count").default(0).notNull(),
-		totalDeliveries: integer("total_deliveries")
-			.default(0)
-			.notNull(),
+		totalDeliveries: integer("total_deliveries").default(0).notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.defaultNow()
 			.notNull(),
@@ -354,9 +334,7 @@ export const menuCategories = pgTable(
 			.notNull(),
 	},
 	(table) => [
-		index("menu_categories_restaurant_id_idx").on(
-			table.restaurantId,
-		),
+		index("menu_categories_restaurant_id_idx").on(table.restaurantId),
 	],
 );
 
@@ -416,9 +394,7 @@ export const customizationGroups = pgTable(
 			.notNull(),
 	},
 	(table) => [
-		index("customization_groups_menu_item_id_idx").on(
-			table.menuItemId,
-		),
+		index("customization_groups_menu_item_id_idx").on(table.menuItemId),
 	],
 );
 
@@ -443,21 +419,16 @@ export const customizationOptions = pgTable(
 			.defaultNow()
 			.notNull(),
 	},
-	(table) => [
-		index("customization_options_group_id_idx").on(table.groupId),
-	],
+	(table) => [index("customization_options_group_id_idx").on(table.groupId)],
 );
 
 export const coupons = pgTable(
 	"coupons",
 	{
 		id: uuid("id").defaultRandom().primaryKey(),
-		restaurantId: uuid("restaurant_id").references(
-			() => restaurants.id,
-			{
-				onDelete: "cascade",
-			},
-		),
+		restaurantId: uuid("restaurant_id").references(() => restaurants.id, {
+			onDelete: "cascade",
+		}),
 		code: varchar("code", { length: 50 }).notNull(),
 		discountType: couponTypeEnum().notNull(),
 		discountValue: numeric("discount_value", {
@@ -574,10 +545,7 @@ export const orders = pgTable(
 		index("orders_restaurant_id_idx").on(table.restaurantId),
 		index("orders_driver_id_idx").on(table.driverId),
 		index("orders_status_idx").on(table.status),
-		index("orders_status_created_at_idx").on(
-			table.status,
-			table.createdAt,
-		),
+		index("orders_status_created_at_idx").on(table.status, table.createdAt),
 	],
 );
 
@@ -588,12 +556,9 @@ export const orderItems = pgTable(
 		orderId: uuid("order_id")
 			.notNull()
 			.references(() => orders.id, { onDelete: "cascade" }),
-		menuItemId: uuid("menu_item_id").references(
-			() => menuItems.id,
-			{
-				onDelete: "set null",
-			},
-		),
+		menuItemId: uuid("menu_item_id").references(() => menuItems.id, {
+			onDelete: "set null",
+		}),
 		itemName: varchar("item_name", { length: 255 }).notNull(),
 		quantity: integer("quantity").default(1).notNull(),
 		unitPrice: numeric("unit_price", {
@@ -617,20 +582,19 @@ export const orderItemCustomizations = pgTable(
 			.references(() => orderItems.id, {
 				onDelete: "cascade",
 			}),
-		customizationOptionId: uuid(
-			"customization_option_id",
-		).references(() => customizationOptions.id, {
-			onDelete: "set null",
-		}),
+		customizationOptionId: uuid("customization_option_id").references(
+			() => customizationOptions.id,
+			{
+				onDelete: "set null",
+			},
+		),
 		optionName: varchar("option_name", { length: 100 }).notNull(),
 		price: numeric("price", { precision: 10, scale: 2 })
 			.default("0.00")
 			.notNull(),
 	},
 	(table) => [
-		index("order_item_customizations_order_item_id_idx").on(
-			table.orderItemId,
-		),
+		index("order_item_customizations_order_item_id_idx").on(table.orderItemId),
 	],
 );
 
@@ -644,9 +608,7 @@ export const deliveryRequests = pgTable(
 		driverId: uuid("driver_id")
 			.notNull()
 			.references(() => drivers.id),
-		status: deliveryRequestStatusEnum()
-			.default("pending")
-			.notNull(),
+		status: deliveryRequestStatusEnum().default("pending").notNull(),
 		expiresAt: timestamp("expires_at", {
 			withTimezone: true,
 		}).notNull(),
@@ -672,12 +634,9 @@ export const reviews = pgTable(
 		customerId: uuid("customer_id")
 			.notNull()
 			.references(() => users.id, { onDelete: "cascade" }),
-		restaurantId: uuid("restaurant_id").references(
-			() => restaurants.id,
-			{
-				onDelete: "set null",
-			},
-		),
+		restaurantId: uuid("restaurant_id").references(() => restaurants.id, {
+			onDelete: "set null",
+		}),
 		driverId: uuid("driver_id").references(() => drivers.id, {
 			onDelete: "set null",
 		}),
@@ -730,9 +689,7 @@ export const payments = pgTable(
 	(table) => [
 		index("payments_order_id_idx").on(table.orderId),
 		index("payments_user_id_idx").on(table.userId),
-		uniqueIndex("payments_gateway_ref_uidx").on(
-			table.gatewayReference,
-		),
+		uniqueIndex("payments_gateway_ref_uidx").on(table.gatewayReference),
 	],
 );
 
@@ -755,10 +712,7 @@ export const notifications = pgTable(
 	},
 	(table) => [
 		index("notifications_user_id_idx").on(table.userId),
-		index("notifications_user_id_is_read_idx").on(
-			table.userId,
-			table.isRead,
-		),
+		index("notifications_user_id_is_read_idx").on(table.userId, table.isRead),
 	],
 );
 

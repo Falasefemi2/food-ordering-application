@@ -1,21 +1,21 @@
-import { describe, it, expect } from "vitest";
+import { getTableName } from "drizzle-orm";
+import { describe, expect, it } from "vitest";
 import {
-	users,
 	addresses,
-	restaurants,
+	coupons,
+	customizationGroups,
+	customizationOptions,
 	drivers,
 	menuCategories,
 	menuItems,
-	customizationGroups,
-	customizationOptions,
-	coupons,
-	orders,
-	orderItems,
 	orderItemCustomizations,
-	reviews,
+	orderItems,
+	orders,
 	payments,
+	restaurants,
+	reviews,
+	users,
 } from "../src/db/schema";
-import { getTableName } from "drizzle-orm";
 
 describe("Production Database Schema Compilation & Structure", () => {
 	it("should define users table correctly", () => {
@@ -81,13 +81,9 @@ describe("Production Database Schema Compilation & Structure", () => {
 
 	it("should define customization groups and options tables correctly", () => {
 		expect(customizationGroups).toBeDefined();
-		expect(getTableName(customizationGroups)).toBe(
-			"customization_groups",
-		);
+		expect(getTableName(customizationGroups)).toBe("customization_groups");
 		expect(customizationGroups.menuItemId).toBeDefined();
-		expect(getTableName(customizationOptions)).toBe(
-			"customization_options",
-		);
+		expect(getTableName(customizationOptions)).toBe("customization_options");
 		expect(customizationOptions).toBeDefined();
 		expect(customizationOptions.groupId).toBeDefined();
 		expect(customizationOptions.price).toBeDefined();

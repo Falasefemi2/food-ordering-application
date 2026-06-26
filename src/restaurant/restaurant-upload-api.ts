@@ -12,38 +12,20 @@ export class RestaurantUploadApiGroup extends HttpApiGroup.make(
 	"restaurantUpload",
 )
 	.add(
-		HttpApiEndpoint.post(
-			"uploadRestaurantLogo",
-			"/restaurants/:id/logo",
-			{
-				disableCodecs: true,
-				params: Schema.Struct({ id: Schema.String }),
-				success: UploadResponse,
-				error: [
-					NotFoundError,
-					ForbiddenError,
-					ImageUploadError,
-					DbError,
-				],
-			},
-		).middleware(AuthMiddleware),
+		HttpApiEndpoint.post("uploadRestaurantLogo", "/restaurants/:id/logo", {
+			disableCodecs: true,
+			params: Schema.Struct({ id: Schema.String }),
+			success: UploadResponse,
+			error: [NotFoundError, ForbiddenError, ImageUploadError, DbError],
+		}).middleware(AuthMiddleware),
 	)
 	.add(
-		HttpApiEndpoint.post(
-			"uploadRestaurantBanner",
-			"/restaurants/:id/banner",
-			{
-				disableCodecs: true,
-				params: Schema.Struct({ id: Schema.String }),
-				success: UploadResponse,
-				error: [
-					NotFoundError,
-					ForbiddenError,
-					ImageUploadError,
-					DbError,
-				],
-			},
-		).middleware(AuthMiddleware),
+		HttpApiEndpoint.post("uploadRestaurantBanner", "/restaurants/:id/banner", {
+			disableCodecs: true,
+			params: Schema.Struct({ id: Schema.String }),
+			success: UploadResponse,
+			error: [NotFoundError, ForbiddenError, ImageUploadError, DbError],
+		}).middleware(AuthMiddleware),
 	)
 	.add(
 		HttpApiEndpoint.post(
@@ -56,12 +38,7 @@ export class RestaurantUploadApiGroup extends HttpApiGroup.make(
 					itemId: Schema.String,
 				}),
 				success: UploadResponse,
-				error: [
-					NotFoundError,
-					ForbiddenError,
-					ImageUploadError,
-					DbError,
-				],
+				error: [NotFoundError, ForbiddenError, ImageUploadError, DbError],
 			},
 		).middleware(AuthMiddleware),
 	) {}

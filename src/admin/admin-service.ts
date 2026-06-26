@@ -1,6 +1,6 @@
-import * as Effect from "effect/Effect";
 import * as Context from "effect/Context";
-import type { DbError, NotFoundError, BusinessRuleError } from "../libs/errors";
+import type * as Effect from "effect/Effect";
+import type { BusinessRuleError, DbError, NotFoundError } from "../libs/errors";
 import type { RestaurantRow } from "../restaurant/restaurant-service";
 
 export type ApprovalAction = "approved" | "rejected" | "suspended";
@@ -24,10 +24,7 @@ export interface AdminUserRow {
 }
 
 export interface AdminServiceShape {
-	listPendingRestaurants: () => Effect.Effect<
-		AdminRestaurantRow[],
-		DbError
-	>;
+	listPendingRestaurants: () => Effect.Effect<AdminRestaurantRow[], DbError>;
 
 	listAllRestaurants: (filters?: {
 		approvalStatus?: string;

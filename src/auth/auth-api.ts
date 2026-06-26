@@ -1,7 +1,10 @@
 import * as Schema from "effect/Schema";
-import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
+import {
+	HttpApiEndpoint,
+	HttpApiGroup,
+	HttpApiSchema,
+} from "effect/unstable/httpapi";
 import { RateLimiter } from "effect/unstable/persistence";
-import { HttpApiSchema } from "effect/unstable/httpapi";
 import {
 	ConflictError,
 	InvalidTokenError,
@@ -39,29 +42,15 @@ export class AuthApiGroup extends HttpApiGroup.make("auth")
 	.add(
 		HttpApiEndpoint.post("register", "/auth/register", {
 			payload: Schema.Struct({
-				firstName: Schema.String.pipe(
-					Schema.check(Schema.isMinLength(1)),
-				),
-				lastName: Schema.String.pipe(
-					Schema.check(Schema.isMinLength(1)),
-				),
+				firstName: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
+				lastName: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
 				email: Schema.String.pipe(
-					Schema.check(
-						Schema.isPattern(
-							/^\S+@\S+\.\S+$/,
-						),
-					),
+					Schema.check(Schema.isPattern(/^\S+@\S+\.\S+$/)),
 				),
-				password: Schema.String.pipe(
-					Schema.check(Schema.isMinLength(8)),
-				),
+				password: Schema.String.pipe(Schema.check(Schema.isMinLength(8))),
 				phoneNumber: Schema.optional(
 					Schema.String.pipe(
-						Schema.check(
-							Schema.isPattern(
-								/^\+?[0-9]\d{7,14}$/,
-							),
-						),
+						Schema.check(Schema.isPattern(/^\+?[0-9]\d{7,14}$/)),
 					),
 				),
 				role: Schema.optional(
@@ -80,15 +69,9 @@ export class AuthApiGroup extends HttpApiGroup.make("auth")
 		HttpApiEndpoint.post("login", "/auth/login", {
 			payload: Schema.Struct({
 				email: Schema.String.pipe(
-					Schema.check(
-						Schema.isPattern(
-							/^\S+@\S+\.\S+$/,
-						),
-					),
+					Schema.check(Schema.isPattern(/^\S+@\S+\.\S+$/)),
 				),
-				password: Schema.String.pipe(
-					Schema.check(Schema.isMinLength(1)),
-				),
+				password: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
 			}),
 			success: AuthSuccess,
 			error: [UnauthorizedError, RateLimitError],

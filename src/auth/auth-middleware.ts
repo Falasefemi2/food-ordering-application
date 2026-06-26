@@ -1,20 +1,20 @@
-import * as Effect from "effect/Effect";
 import * as Context from "effect/Context";
+import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
+import type { unhandled } from "effect/Types";
 import {
 	HttpServerRequest,
 	type HttpServerRequest as HttpServerRequestType,
 } from "effect/unstable/http/HttpServerRequest";
-import { HttpApiMiddleware, HttpApiSecurity } from "effect/unstable/httpapi";
 import type { HttpServerResponse } from "effect/unstable/http/HttpServerResponse";
-import type { unhandled } from "effect/Types";
-import { AuthService, type JwtPayload } from "./auth-service";
+import { HttpApiMiddleware, HttpApiSecurity } from "effect/unstable/httpapi";
 import {
 	ForbiddenError,
 	InvalidTokenError,
 	TokenExpiredError,
 } from "../libs/errors";
+import { AuthService, type JwtPayload } from "./auth-service";
 
 export const BearerSecurity = HttpApiSecurity.bearer;
 
@@ -40,9 +40,7 @@ export const requireAuth = <A, E, R>(
 			});
 		}
 
-		const payload = yield* auth.verifyAccessToken(
-			authHeader.slice(7),
-		);
+		const payload = yield* auth.verifyAccessToken(authHeader.slice(7));
 		return yield* Effect.provideService(next, AuthContext, payload);
 	});
 
@@ -65,7 +63,7 @@ export const requireRole =
 
 export class AuthMiddleware extends HttpApiMiddleware.Service<
 	AuthMiddleware,
-	{ provides: AuthContext; requires: AuthService }
+	{ provides: AuthContext; requires: never }
 >()("chowdeck/AuthMiddleware", {
 	error: [InvalidTokenError, TokenExpiredError],
 	security: { bearer: BearerSecurity },
@@ -78,27 +76,14 @@ export const AuthMiddlewareLayer = Layer.effect(
 
 		return {
 			bearer: (
-				httpEffect: Effect.Effect<
-					HttpServerResponse,
-					unhandled,
-					AuthContext
-				>,
-				{
-					credential,
-				}: { credential: Redacted.Redacted<string> },
+				httpEffect: Effect.Effect<HttpServerResponse, unhandled, AuthContext>,
+				{ credential }: { credential: Redacted.Redacted<string> },
 			) =>
 				Effect.gen(function* () {
-					const payload =
-						yield* auth.verifyAccessToken(
-							Redacted.value(
-								credential,
-							),
-						);
-					return yield* Effect.provideService(
-						httpEffect,
-						AuthContext,
-						payload,
+					const payload = yield* auth.verifyAccessToken(
+						Redacted.value(credential),
 					);
+					return yield* Effect.provideService(httpEffect, AuthContext, payload);
 				}),
 		};
 	}),

@@ -1,8 +1,8 @@
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import { RateLimiter } from "effect/unstable/persistence";
 import { HttpServerRequest } from "effect/unstable/http/HttpServerRequest";
+import { RateLimiter } from "effect/unstable/persistence";
 
 const Limits = {
 	register: { limit: 5, window: "1 hour" },
@@ -29,10 +29,7 @@ export const RateLimiterLive = Layer.effect(
 	RateLimterService,
 	Effect.gen(function* () {
 		const withLimiter = yield* RateLimiter.makeWithRateLimiter;
-		const check: RateLimiterServiceShape["check"] = (
-			preset,
-			key,
-		) => {
+		const check: RateLimiterServiceShape["check"] = (preset, key) => {
 			const { limit, window } = Limits[preset];
 			return Effect.void.pipe(
 				withLimiter({

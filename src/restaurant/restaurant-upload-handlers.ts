@@ -1,18 +1,18 @@
+import { and, eq, isNull } from "drizzle-orm";
+import type { EffectDrizzleQueryError } from "drizzle-orm/effect-core";
 import * as Effect from "effect/Effect";
+import { HttpServerRequest } from "effect/unstable/http/HttpServerRequest";
 import { HttpApiBuilder } from "effect/unstable/httpapi";
-import { eq, and, isNull } from "drizzle-orm";
 import { Api } from "../api";
 import { AuthContext } from "../auth/auth-middleware";
 import { PgDatabase } from "../db";
-import { restaurants, menuItems } from "../db/schema";
-import { ForbiddenError, NotFoundError, DbError } from "../libs/errors";
-import type { EffectDrizzleQueryError } from "drizzle-orm/effect-core";
+import { menuItems, restaurants } from "../db/schema";
+import { DbError, ForbiddenError, NotFoundError } from "../libs/errors";
 import {
 	ImageUploadError,
 	ImageUploadService,
 	UploadFolder,
 } from "../libs/imageservice";
-import { HttpServerRequest } from "effect/unstable/http/HttpServerRequest";
 
 const dbQuery = <A>(effect: Effect.Effect<A, EffectDrizzleQueryError>) =>
 	effect.pipe(
@@ -34,14 +34,11 @@ export const RestaurantUploadHandlers = HttpApiBuilder.group(
 		return handlers
 			.handle("uploadRestaurantLogo", ({ params }) =>
 				Effect.gen(function* () {
-					const { sub: ownerId, role } =
-						yield* AuthContext;
+					const { sub: ownerId, role } = yield* AuthContext;
 					if (role !== "vendor")
-						return yield* new ForbiddenError(
-							{
-								message: "Vendors only",
-							},
-						);
+						return yield* new ForbiddenError({
+							message: "Vendors only",
+						});
 
 					const [restaurant] = yield* dbQuery(
 						db
@@ -52,34 +49,24 @@ export const RestaurantUploadHandlers = HttpApiBuilder.group(
 							.from(restaurants)
 							.where(
 								and(
-									eq(
-										restaurants.id,
-										params.id,
-									),
-									isNull(
-										restaurants.deletedAt,
-									),
+									eq(restaurants.id, params.id),
+									isNull(restaurants.deletedAt),
 								),
 							)
 							.limit(1),
 					);
 
 					if (!restaurant)
-						return yield* new NotFoundError(
-							{
-								resource: "Restaurant",
-								id: params.id,
-							},
-						);
+						return yield* new NotFoundError({
+							resource: "Restaurant",
+							id: params.id,
+						});
 					if (restaurant.ownerId !== ownerId)
-						return yield* new ForbiddenError(
-							{
-								message: "You do not own this restaurant",
-							},
-						);
+						return yield* new ForbiddenError({
+							message: "You do not own this restaurant",
+						});
 
-					const request =
-						yield* HttpServerRequest;
+					const request = yield* HttpServerRequest;
 					const url = yield* Effect.scoped(
 						uploader.uploadFromRequest(
 							request,
@@ -95,12 +82,7 @@ export const RestaurantUploadHandlers = HttpApiBuilder.group(
 								logoUrl: url,
 								updatedAt: new Date(),
 							})
-							.where(
-								eq(
-									restaurants.id,
-									params.id,
-								),
-							),
+							.where(eq(restaurants.id, params.id)),
 					);
 
 					return { url };
@@ -109,14 +91,11 @@ export const RestaurantUploadHandlers = HttpApiBuilder.group(
 
 			.handle("uploadRestaurantBanner", ({ params }) =>
 				Effect.gen(function* () {
-					const { sub: ownerId, role } =
-						yield* AuthContext;
+					const { sub: ownerId, role } = yield* AuthContext;
 					if (role !== "vendor")
-						return yield* new ForbiddenError(
-							{
-								message: "Vendors only",
-							},
-						);
+						return yield* new ForbiddenError({
+							message: "Vendors only",
+						});
 
 					const [restaurant] = yield* dbQuery(
 						db
@@ -127,34 +106,24 @@ export const RestaurantUploadHandlers = HttpApiBuilder.group(
 							.from(restaurants)
 							.where(
 								and(
-									eq(
-										restaurants.id,
-										params.id,
-									),
-									isNull(
-										restaurants.deletedAt,
-									),
+									eq(restaurants.id, params.id),
+									isNull(restaurants.deletedAt),
 								),
 							)
 							.limit(1),
 					);
 
 					if (!restaurant)
-						return yield* new NotFoundError(
-							{
-								resource: "Restaurant",
-								id: params.id,
-							},
-						);
+						return yield* new NotFoundError({
+							resource: "Restaurant",
+							id: params.id,
+						});
 					if (restaurant.ownerId !== ownerId)
-						return yield* new ForbiddenError(
-							{
-								message: "You do not own this restaurant",
-							},
-						);
+						return yield* new ForbiddenError({
+							message: "You do not own this restaurant",
+						});
 
-					const request =
-						yield* HttpServerRequest;
+					const request = yield* HttpServerRequest;
 					const url = yield* Effect.scoped(
 						uploader.uploadFromRequest(
 							request,
@@ -170,12 +139,7 @@ export const RestaurantUploadHandlers = HttpApiBuilder.group(
 								bannerUrl: url,
 								updatedAt: new Date(),
 							})
-							.where(
-								eq(
-									restaurants.id,
-									params.id,
-								),
-							),
+							.where(eq(restaurants.id, params.id)),
 					);
 
 					return { url };
@@ -184,14 +148,11 @@ export const RestaurantUploadHandlers = HttpApiBuilder.group(
 
 			.handle("uploadMenuItemImage", ({ params }) =>
 				Effect.gen(function* () {
-					const { sub: ownerId, role } =
-						yield* AuthContext;
+					const { sub: ownerId, role } = yield* AuthContext;
 					if (role !== "vendor")
-						return yield* new ForbiddenError(
-							{
-								message: "Vendors only",
-							},
-						);
+						return yield* new ForbiddenError({
+							message: "Vendors only",
+						});
 
 					const [restaurant] = yield* dbQuery(
 						db
@@ -202,31 +163,22 @@ export const RestaurantUploadHandlers = HttpApiBuilder.group(
 							.from(restaurants)
 							.where(
 								and(
-									eq(
-										restaurants.id,
-										params.id,
-									),
-									isNull(
-										restaurants.deletedAt,
-									),
+									eq(restaurants.id, params.id),
+									isNull(restaurants.deletedAt),
 								),
 							)
 							.limit(1),
 					);
 
 					if (!restaurant)
-						return yield* new NotFoundError(
-							{
-								resource: "Restaurant",
-								id: params.id,
-							},
-						);
+						return yield* new NotFoundError({
+							resource: "Restaurant",
+							id: params.id,
+						});
 					if (restaurant.ownerId !== ownerId)
-						return yield* new ForbiddenError(
-							{
-								message: "You do not own this restaurant",
-							},
-						);
+						return yield* new ForbiddenError({
+							message: "You do not own this restaurant",
+						});
 
 					const [item] = yield* dbQuery(
 						db
@@ -236,32 +188,21 @@ export const RestaurantUploadHandlers = HttpApiBuilder.group(
 							.from(menuItems)
 							.where(
 								and(
-									eq(
-										menuItems.id,
-										params.itemId,
-									),
-									eq(
-										menuItems.restaurantId,
-										params.id,
-									),
-									isNull(
-										menuItems.deletedAt,
-									),
+									eq(menuItems.id, params.itemId),
+									eq(menuItems.restaurantId, params.id),
+									isNull(menuItems.deletedAt),
 								),
 							)
 							.limit(1),
 					);
 
 					if (!item)
-						return yield* new NotFoundError(
-							{
-								resource: "MenuItem",
-								id: params.itemId,
-							},
-						);
+						return yield* new NotFoundError({
+							resource: "MenuItem",
+							id: params.itemId,
+						});
 
-					const request =
-						yield* HttpServerRequest;
+					const request = yield* HttpServerRequest;
 					const url = yield* Effect.scoped(
 						uploader.uploadFromRequest(
 							request,
@@ -277,12 +218,7 @@ export const RestaurantUploadHandlers = HttpApiBuilder.group(
 								imageUrl: url,
 								updatedAt: new Date(),
 							})
-							.where(
-								eq(
-									menuItems.id,
-									params.itemId,
-								),
-							),
+							.where(eq(menuItems.id, params.itemId)),
 					);
 
 					return { url };
