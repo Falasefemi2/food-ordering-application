@@ -1,5 +1,5 @@
-import * as Effect from "effect/Effect";
 import * as crypto from "crypto";
+import * as Effect from "effect/Effect";
 import { DbError } from "../libs/errors";
 
 export const verifyPassword = (
@@ -28,8 +28,7 @@ export const hashPassword = (
 	password: string,
 ): Effect.Effect<string, DbError> =>
 	Effect.tryPromise({
-		try: () =>
-			Bun.password.hash(password, { algorithm: "argon2id" }),
+		try: () => Bun.password.hash(password, { algorithm: "argon2id" }),
 		catch: (cause) =>
 			new DbError({
 				message: "Failed to hash password",

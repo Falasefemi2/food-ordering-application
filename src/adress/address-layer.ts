@@ -1,18 +1,18 @@
+import { and, eq } from "drizzle-orm";
+import type { EffectDrizzleQueryError } from "drizzle-orm/effect-core";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import { eq, and } from "drizzle-orm";
 import { PgDatabase } from "../db";
 import { addresses } from "../db/schema";
 import {
-	DbError,
-	NotFoundError,
-	ForbiddenError,
 	BusinessRuleError,
+	DbError,
+	ForbiddenError,
+	NotFoundError,
 } from "../libs/errors";
-import type { EffectDrizzleQueryError } from "drizzle-orm/effect-core";
 import {
-	AddressService,
 	type AddressRow,
+	AddressService,
 	type AddressServiceShape,
 } from "./adress-service";
 
@@ -71,16 +71,7 @@ export const AddressLive = Layer.effect(
 						.select()
 						.from(addresses)
 						.where(
-							and(
-								eq(
-									addresses.id,
-									addressId,
-								),
-								eq(
-									addresses.userId,
-									userId,
-								),
-							),
+							and(eq(addresses.id, addressId), eq(addresses.userId, userId)),
 						)
 						.limit(1),
 				);
@@ -97,36 +88,20 @@ export const AddressLive = Layer.effect(
 				}
 				return row;
 			});
-		const listAddresses: AddressServiceShape["listAddresses"] = (
-			userId,
-		) =>
+		const listAddresses: AddressServiceShape["listAddresses"] = (userId) =>
 			Effect.gen(function* () {
 				const rows = yield* dbQuery(
 					db
 						.select()
 						.from(addresses)
-						.where(
-							eq(
-								addresses.userId,
-								userId,
-							),
-						)
-						.orderBy(
-							addresses.isDefault,
-							addresses.createdAt,
-						),
+						.where(eq(addresses.userId, userId))
+						.orderBy(addresses.isDefault, addresses.createdAt),
 				);
 				return rows.map(toAddressRow);
 			});
-		const getAddress: AddressServiceShape["getAddress"] = (
-			addressId,
-			userId,
-		) =>
+		const getAddress: AddressServiceShape["getAddress"] = (addressId, userId) =>
 			Effect.gen(function* () {
-				const row = yield* assertOwner(
-					addressId,
-					userId,
-				);
+				const row = yield* assertOwner(addressId, userId);
 				return toAddressRow(row);
 			});
 		const createAddress: AddressServiceShape["createAddress"] = (
@@ -141,17 +116,10 @@ export const AddressLive = Layer.effect(
 							isDefault: addresses.isDefault,
 						})
 						.from(addresses)
-						.where(
-							eq(
-								addresses.userId,
-								userId,
-							),
-						),
+						.where(eq(addresses.userId, userId)),
 				);
 				const isFirstAddress = exisiting.length === 0;
-				const shouldBeDefault =
-					isFirstAddress ||
-					(input.isDefault ?? false);
+				const shouldBeDefault = isFirstAddress || (input.isDefault ?? false);
 				if (shouldBeDefault && exisiting.length > 0) {
 					yield* dbQuery(
 						db
@@ -160,12 +128,7 @@ export const AddressLive = Layer.effect(
 								isDefault: false,
 								updatedAt: new Date(),
 							})
-							.where(
-								eq(
-									addresses.userId,
-									userId,
-								),
-							),
+							.where(eq(addresses.userId, userId)),
 					);
 				}
 				const [row] = yield* dbQuery(
@@ -173,22 +136,13 @@ export const AddressLive = Layer.effect(
 						.insert(addresses)
 						.values({
 							userId,
-							label:
-								input.label ??
-								"Home",
-							addressLine1:
-								input.addressLine1,
-							addressLine2:
-								input.addressLine2 ??
-								null,
+							label: input.label ?? "Home",
+							addressLine1: input.addressLine1,
+							addressLine2: input.addressLine2 ?? null,
 							city: input.city,
 							state: input.state,
-							country:
-								input.country ??
-								"Nigeria",
-							postalCode:
-								input.postalCode ??
-								null,
+							country: input.country ?? "Nigeria",
+							postalCode: input.postalCode ?? null,
 							latitude: input.latitude,
 							longitude: input.longitude,
 							isDefault: shouldBeDefault,
@@ -217,14 +171,7 @@ export const AddressLive = Layer.effect(
 								isDefault: false,
 								updatedAt: new Date(),
 							})
-							.where(
-								and(
-									eq(
-										addresses.userId,
-										userId,
-									),
-								),
-							),
+							.where(and(eq(addresses.userId, userId))),
 					);
 				}
 				const [updated] = yield* dbQuery(
@@ -235,16 +182,7 @@ export const AddressLive = Layer.effect(
 							updatedAt: new Date(),
 						})
 						.where(
-							and(
-								eq(
-									addresses.id,
-									addressId,
-								),
-								eq(
-									addresses.userId,
-									userId,
-								),
-							),
+							and(eq(addresses.id, addressId), eq(addresses.userId, userId)),
 						)
 						.returning(),
 				);
@@ -262,10 +200,7 @@ export const AddressLive = Layer.effect(
 			userId,
 		) =>
 			Effect.gen(function* () {
-				const row = yield* assertOwner(
-					addressId,
-					userId,
-				);
+				const row = yield* assertOwner(addressId, userId);
 				if (row.isDefault) {
 					const others = yield* dbQuery(
 						db
@@ -273,90 +208,59 @@ export const AddressLive = Layer.effect(
 								id: addresses.id,
 							})
 							.from(addresses)
-							.where(
-								and(
-									eq(
-										addresses.userId,
-										userId,
-									),
-								),
-							)
+							.where(and(eq(addresses.userId, userId)))
 							.limit(2),
 					);
 					if (others.length > 1) {
-						return yield* new BusinessRuleError(
-							{
-								message: "Cannot delete your default address. Set another address as default first.",
-							},
-						);
+						return yield* new BusinessRuleError({
+							message:
+								"Cannot delete your default address. Set another address as default first.",
+						});
 					}
 				}
 				yield* dbQuery(
 					db
 						.delete(addresses)
 						.where(
-							and(
-								eq(
-									addresses.id,
-									addressId,
-								),
-								eq(
-									addresses.userId,
-									userId,
-								),
-							),
+							and(eq(addresses.id, addressId), eq(addresses.userId, userId)),
 						),
 				);
 			});
-		const setDefaultAddress: AddressServiceShape["setDefaultAddress"] =
-			(addressId, userId) =>
-				Effect.gen(function* () {
-					yield* assertOwner(addressId, userId);
-					yield* dbQuery(
-						db
-							.update(addresses)
-							.set({
-								isDefault: false,
-								updatedAt: new Date(),
-							})
-							.where(
-								eq(
-									addresses.userId,
-									userId,
-								),
-							),
-					);
-					const [updated] = yield* dbQuery(
-						db
-							.update(addresses)
-							.set({
-								isDefault: true,
-								updatedAt: new Date(),
-							})
-							.where(
-								and(
-									eq(
-										addresses.id,
-										addressId,
-									),
-									eq(
-										addresses.userId,
-										userId,
-									),
-								),
-							)
-							.returning(),
-					);
-					if (!updated) {
-						return yield* new NotFoundError(
-							{
-								resource: "Address",
-								id: addressId,
-							},
-						);
-					}
-					return toAddressRow(updated);
-				});
+		const setDefaultAddress: AddressServiceShape["setDefaultAddress"] = (
+			addressId,
+			userId,
+		) =>
+			Effect.gen(function* () {
+				yield* assertOwner(addressId, userId);
+				yield* dbQuery(
+					db
+						.update(addresses)
+						.set({
+							isDefault: false,
+							updatedAt: new Date(),
+						})
+						.where(eq(addresses.userId, userId)),
+				);
+				const [updated] = yield* dbQuery(
+					db
+						.update(addresses)
+						.set({
+							isDefault: true,
+							updatedAt: new Date(),
+						})
+						.where(
+							and(eq(addresses.id, addressId), eq(addresses.userId, userId)),
+						)
+						.returning(),
+				);
+				if (!updated) {
+					return yield* new NotFoundError({
+						resource: "Address",
+						id: addressId,
+					});
+				}
+				return toAddressRow(updated);
+			});
 
 		return {
 			listAddresses,

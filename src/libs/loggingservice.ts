@@ -1,10 +1,9 @@
-import * as Config from "effect/Config"
-	import * as Effect from "effect/Effect"
-import * as Layer from "effect/Layer"
-import * as Logger from "effect/Logger"
-import * as References from "effect/References"
 import { BunFileSystem } from "@effect/platform-bun";
-
+import * as Config from "effect/Config";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
+import * as Logger from "effect/Logger";
+import * as References from "effect/References";
 
 const fileLogger = Logger.formatSimple.pipe(
 	Logger.toFile("logs/app.log", {
@@ -13,7 +12,6 @@ const fileLogger = Logger.formatSimple.pipe(
 	}),
 );
 
-
 const DevLoggerLayer = Layer.mergeAll(
 	Logger.layer([Logger.consolePretty({ colors: true }), fileLogger]).pipe(
 		Layer.provide(BunFileSystem.layer),
@@ -21,14 +19,12 @@ const DevLoggerLayer = Layer.mergeAll(
 	Layer.succeed(References.MinimumLogLevel, "Debug"),
 );
 
-
 const ProdLoggerLayer = Layer.mergeAll(
 	Logger.layer([Logger.consoleJson, fileLogger]).pipe(
 		Layer.provide(BunFileSystem.layer),
 	),
 	Layer.succeed(References.MinimumLogLevel, "Info"),
 );
-
 
 export const LoggerLayer = Layer.unwrap(
 	Effect.gen(function* () {

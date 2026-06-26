@@ -1,10 +1,10 @@
 import * as Context from "effect/Context";
-import * as Effect from "effect/Effect";
+import type * as Effect from "effect/Effect";
 import type {
-	DbError,
-	NotFoundError,
-	ForbiddenError,
 	BusinessRuleError,
+	DbError,
+	ForbiddenError,
+	NotFoundError,
 } from "../libs/errors";
 
 export interface AddressRow {
@@ -54,10 +54,7 @@ export interface AddressServiceShape {
 	getAddress: (
 		addressId: string,
 		userId: string,
-	) => Effect.Effect<
-		AddressRow,
-		DbError | NotFoundError | ForbiddenError
-	>;
+	) => Effect.Effect<AddressRow, DbError | NotFoundError | ForbiddenError>;
 	createAddress: (
 		userId: string,
 		input: CreateAddressInput,
@@ -66,10 +63,7 @@ export interface AddressServiceShape {
 		addressId: string,
 		userId: string,
 		input: UpdateAddressInput,
-	) => Effect.Effect<
-		AddressRow,
-		DbError | NotFoundError | ForbiddenError
-	>;
+	) => Effect.Effect<AddressRow, DbError | NotFoundError | ForbiddenError>;
 	deleteAddress: (
 		addressId: string,
 		userId: string,
@@ -80,10 +74,7 @@ export interface AddressServiceShape {
 	setDefaultAddress: (
 		addressId: string,
 		userId: string,
-	) => Effect.Effect<
-		AddressRow,
-		DbError | NotFoundError | ForbiddenError
-	>;
+	) => Effect.Effect<AddressRow, DbError | NotFoundError | ForbiddenError>;
 }
 
 export class AddressService extends Context.Service<

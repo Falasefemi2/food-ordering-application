@@ -1,5 +1,5 @@
 import * as Context from "effect/Context";
-import * as Effect from "effect/Effect";
+import type * as Effect from "effect/Effect";
 import type {
 	ConflictError,
 	DbError,
@@ -39,10 +39,7 @@ export interface AuthServiceShape {
 	register: (
 		input: RegisterInput,
 		meta?: { userAgent?: string; ipAddress?: string },
-	) => Effect.Effect<
-		TokenPair & { userId: string },
-		DbError | ConflictError
-	>;
+	) => Effect.Effect<TokenPair & { userId: string }, DbError | ConflictError>;
 
 	login: (
 		input: LoginInput,
@@ -57,10 +54,7 @@ export interface AuthServiceShape {
 		meta?: { userAgent?: string; ipAddress?: string },
 	) => Effect.Effect<
 		TokenPair,
-		| DbError
-		| InvalidTokenError
-		| TokenExpiredError
-		| UnauthorizedError
+		DbError | InvalidTokenError | TokenExpiredError | UnauthorizedError
 	>;
 
 	verifyAccessToken: (

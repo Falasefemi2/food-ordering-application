@@ -2,10 +2,10 @@ import * as Schema from "effect/Schema";
 import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
 import { AuthMiddleware } from "../auth/auth-middleware";
 import {
-	NotFoundError,
+	BusinessRuleError,
 	ConflictError,
 	ForbiddenError,
-	BusinessRuleError,
+	NotFoundError,
 } from "../libs/errors";
 
 export const RestaurantResponse = Schema.Struct({
@@ -192,17 +192,11 @@ export class RestaurantApiGroup extends HttpApiGroup.make("restaurant")
 	.add(
 		HttpApiEndpoint.post("createRestaurant", "/restaurants", {
 			payload: Schema.Struct({
-				name: Schema.String.pipe(
-					Schema.check(Schema.isMinLength(1)),
-				),
+				name: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
 				description: Schema.optional(Schema.String),
 				phoneNumber: Schema.String,
 				email: Schema.String.pipe(
-					Schema.check(
-						Schema.isPattern(
-							/^\S+@\S+\.\S+$/,
-						),
-					),
+					Schema.check(Schema.isPattern(/^\S+@\S+\.\S+$/)),
 				),
 				addressLine: Schema.String,
 				city: Schema.String,
@@ -212,9 +206,7 @@ export class RestaurantApiGroup extends HttpApiGroup.make("restaurant")
 				longitude: Schema.String,
 				openingTime: TimePattern,
 				closingTime: TimePattern,
-				estimatedPrepTime: Schema.optional(
-					Schema.Number,
-				),
+				estimatedPrepTime: Schema.optional(Schema.Number),
 			}),
 			success: RestaurantResponse,
 			error: [ConflictError, ForbiddenError],
@@ -234,55 +226,31 @@ export class RestaurantApiGroup extends HttpApiGroup.make("restaurant")
 				description: Schema.optional(Schema.String),
 				phoneNumber: Schema.optional(Schema.String),
 				email: Schema.optional(
-					Schema.String.pipe(
-						Schema.check(
-							Schema.isPattern(
-								/^\S+@\S+\.\S+$/,
-							),
-						),
-					),
+					Schema.String.pipe(Schema.check(Schema.isPattern(/^\S+@\S+\.\S+$/))),
 				),
 				addressLine: Schema.optional(Schema.String),
 				city: Schema.optional(Schema.String),
 				state: Schema.optional(Schema.String),
 				openingTime: Schema.optional(TimePattern),
 				closingTime: Schema.optional(TimePattern),
-				estimatedPrepTime: Schema.optional(
-					Schema.Number,
-				),
+				estimatedPrepTime: Schema.optional(Schema.Number),
 				isOpen: Schema.optional(Schema.Boolean),
 			}),
 			success: RestaurantResponse,
-			error: [
-				NotFoundError,
-				ForbiddenError,
-				BusinessRuleError,
-			],
+			error: [NotFoundError, ForbiddenError, BusinessRuleError],
 		}).middleware(AuthMiddleware),
 	)
 	.add(
-		HttpApiEndpoint.post(
-			"createCategory",
-			"/restaurants/:id/categories",
-			{
-				params: Schema.Struct({ id: Schema.String }),
-				payload: Schema.Struct({
-					name: Schema.String.pipe(
-						Schema.check(
-							Schema.isMinLength(1),
-						),
-					),
-					description: Schema.optional(
-						Schema.String,
-					),
-					sortOrder: Schema.optional(
-						Schema.Number,
-					),
-				}),
-				success: FlatMenuCategoryResponse,
-				error: [NotFoundError, ForbiddenError],
-			},
-		).middleware(AuthMiddleware),
+		HttpApiEndpoint.post("createCategory", "/restaurants/:id/categories", {
+			params: Schema.Struct({ id: Schema.String }),
+			payload: Schema.Struct({
+				name: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
+				description: Schema.optional(Schema.String),
+				sortOrder: Schema.optional(Schema.Number),
+			}),
+			success: FlatMenuCategoryResponse,
+			error: [NotFoundError, ForbiddenError],
+		}).middleware(AuthMiddleware),
 	)
 	.add(
 		HttpApiEndpoint.patch(
@@ -295,15 +263,9 @@ export class RestaurantApiGroup extends HttpApiGroup.make("restaurant")
 				}),
 				payload: Schema.Struct({
 					name: Schema.optional(Schema.String),
-					description: Schema.optional(
-						Schema.String,
-					),
-					sortOrder: Schema.optional(
-						Schema.Number,
-					),
-					isActive: Schema.optional(
-						Schema.Boolean,
-					),
+					description: Schema.optional(Schema.String),
+					sortOrder: Schema.optional(Schema.Number),
+					isActive: Schema.optional(Schema.Boolean),
 				}),
 				success: FlatMenuCategoryResponse,
 				error: [NotFoundError, ForbiddenError],
@@ -334,21 +296,11 @@ export class RestaurantApiGroup extends HttpApiGroup.make("restaurant")
 					categoryId: Schema.String,
 				}),
 				payload: Schema.Struct({
-					name: Schema.String.pipe(
-						Schema.check(
-							Schema.isMinLength(1),
-						),
-					),
-					description: Schema.optional(
-						Schema.String,
-					),
+					name: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
+					description: Schema.optional(Schema.String),
 					price: Schema.String,
-					isVegetarian: Schema.optional(
-						Schema.Boolean,
-					),
-					calories: Schema.optional(
-						Schema.Number,
-					),
+					isVegetarian: Schema.optional(Schema.Boolean),
+					calories: Schema.optional(Schema.Number),
 				}),
 				success: FlatMenuItemResponse,
 				error: [NotFoundError, ForbiddenError],
@@ -356,48 +308,32 @@ export class RestaurantApiGroup extends HttpApiGroup.make("restaurant")
 		).middleware(AuthMiddleware),
 	)
 	.add(
-		HttpApiEndpoint.patch(
-			"updateMenuItem",
-			"/restaurants/:id/items/:itemId",
-			{
-				params: Schema.Struct({
-					id: Schema.String,
-					itemId: Schema.String,
-				}),
-				payload: Schema.Struct({
-					name: Schema.optional(Schema.String),
-					description: Schema.optional(
-						Schema.String,
-					),
-					price: Schema.optional(Schema.String),
-					isAvailable: Schema.optional(
-						Schema.Boolean,
-					),
-					isVegetarian: Schema.optional(
-						Schema.Boolean,
-					),
-					calories: Schema.optional(
-						Schema.Number,
-					),
-				}),
-				success: FlatMenuItemResponse,
-				error: [NotFoundError, ForbiddenError],
-			},
-		).middleware(AuthMiddleware),
+		HttpApiEndpoint.patch("updateMenuItem", "/restaurants/:id/items/:itemId", {
+			params: Schema.Struct({
+				id: Schema.String,
+				itemId: Schema.String,
+			}),
+			payload: Schema.Struct({
+				name: Schema.optional(Schema.String),
+				description: Schema.optional(Schema.String),
+				price: Schema.optional(Schema.String),
+				isAvailable: Schema.optional(Schema.Boolean),
+				isVegetarian: Schema.optional(Schema.Boolean),
+				calories: Schema.optional(Schema.Number),
+			}),
+			success: FlatMenuItemResponse,
+			error: [NotFoundError, ForbiddenError],
+		}).middleware(AuthMiddleware),
 	)
 	.add(
-		HttpApiEndpoint.delete(
-			"deleteMenuItem",
-			"/restaurants/:id/items/:itemId",
-			{
-				params: Schema.Struct({
-					id: Schema.String,
-					itemId: Schema.String,
-				}),
-				success: DeletedResponse,
-				error: [NotFoundError, ForbiddenError],
-			},
-		).middleware(AuthMiddleware),
+		HttpApiEndpoint.delete("deleteMenuItem", "/restaurants/:id/items/:itemId", {
+			params: Schema.Struct({
+				id: Schema.String,
+				itemId: Schema.String,
+			}),
+			success: DeletedResponse,
+			error: [NotFoundError, ForbiddenError],
+		}).middleware(AuthMiddleware),
 	)
 	.add(
 		HttpApiEndpoint.post(
@@ -409,20 +345,10 @@ export class RestaurantApiGroup extends HttpApiGroup.make("restaurant")
 					itemId: Schema.String,
 				}),
 				payload: Schema.Struct({
-					name: Schema.String.pipe(
-						Schema.check(
-							Schema.isMinLength(1),
-						),
-					),
-					minSelectable: Schema.optional(
-						Schema.Number,
-					),
-					maxSelectable: Schema.optional(
-						Schema.Number,
-					),
-					isRequired: Schema.optional(
-						Schema.Boolean,
-					),
+					name: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
+					minSelectable: Schema.optional(Schema.Number),
+					maxSelectable: Schema.optional(Schema.Number),
+					isRequired: Schema.optional(Schema.Boolean),
 				}),
 				success: FlatCustomizationGroupResponse,
 				error: [NotFoundError, ForbiddenError],
@@ -441,15 +367,9 @@ export class RestaurantApiGroup extends HttpApiGroup.make("restaurant")
 				}),
 				payload: Schema.Struct({
 					name: Schema.optional(Schema.String),
-					minSelectable: Schema.optional(
-						Schema.Number,
-					),
-					maxSelectable: Schema.optional(
-						Schema.Number,
-					),
-					isRequired: Schema.optional(
-						Schema.Boolean,
-					),
+					minSelectable: Schema.optional(Schema.Number),
+					maxSelectable: Schema.optional(Schema.Number),
+					isRequired: Schema.optional(Schema.Boolean),
 				}),
 				success: FlatCustomizationGroupResponse,
 				error: [NotFoundError, ForbiddenError],
@@ -482,15 +402,9 @@ export class RestaurantApiGroup extends HttpApiGroup.make("restaurant")
 					groupId: Schema.String,
 				}),
 				payload: Schema.Struct({
-					name: Schema.String.pipe(
-						Schema.check(
-							Schema.isMinLength(1),
-						),
-					),
+					name: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
 					price: Schema.optional(Schema.String),
-					isAvailable: Schema.optional(
-						Schema.Boolean,
-					),
+					isAvailable: Schema.optional(Schema.Boolean),
 				}),
 				success: FlatCustomizationOptionResponse,
 				error: [NotFoundError, ForbiddenError],
@@ -511,9 +425,7 @@ export class RestaurantApiGroup extends HttpApiGroup.make("restaurant")
 				payload: Schema.Struct({
 					name: Schema.optional(Schema.String),
 					price: Schema.optional(Schema.String),
-					isAvailable: Schema.optional(
-						Schema.Boolean,
-					),
+					isAvailable: Schema.optional(Schema.Boolean),
 				}),
 				success: FlatCustomizationOptionResponse,
 				error: [NotFoundError, ForbiddenError],

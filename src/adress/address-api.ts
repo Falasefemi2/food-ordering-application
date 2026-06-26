@@ -2,9 +2,9 @@ import * as Schema from "effect/Schema";
 import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
 import { AuthMiddleware } from "../auth/auth-middleware";
 import {
-	NotFoundError,
-	ForbiddenError,
 	BusinessRuleError,
+	ForbiddenError,
+	NotFoundError,
 } from "../libs/errors";
 
 const AddressResponse = Schema.Struct({
@@ -84,22 +84,14 @@ export class AddressApiGroup extends HttpApiGroup.make("address")
 		HttpApiEndpoint.delete("deleteAddress", "/addresses/:id", {
 			params: Schema.Struct({ id: Schema.String }),
 			success: Schema.Struct({ message: Schema.String }),
-			error: [
-				NotFoundError,
-				ForbiddenError,
-				BusinessRuleError,
-			],
+			error: [NotFoundError, ForbiddenError, BusinessRuleError],
 		}),
 	)
 	.add(
-		HttpApiEndpoint.post(
-			"setDefaultAddress",
-			"/addresses/:id/default",
-			{
-				params: Schema.Struct({ id: Schema.String }),
-				success: AddressResponse,
-				error: [NotFoundError, ForbiddenError],
-			},
-		),
+		HttpApiEndpoint.post("setDefaultAddress", "/addresses/:id/default", {
+			params: Schema.Struct({ id: Schema.String }),
+			success: AddressResponse,
+			error: [NotFoundError, ForbiddenError],
+		}),
 	)
 	.middleware(AuthMiddleware) {}

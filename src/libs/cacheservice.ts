@@ -24,8 +24,7 @@ export const CacheKeys = {
 		limit: number,
 		city?: string,
 		isOpen?: boolean,
-	) =>
-		`restaurants:list:${page}:${limit}:${city ?? "all"}:${isOpen ?? "all"}`,
+	) => `restaurants:list:${page}:${limit}:${city ?? "all"}:${isOpen ?? "all"}`,
 
 	restaurantDetail: (id: string) => `restaurants:detail:${id}`,
 } as const;
@@ -83,94 +82,66 @@ export const CacheLive = Layer.effect(
 			lookup: () => Effect.die("detail cache miss"),
 		});
 
-		const getRestaurantList: CacheServiceShape["getRestaurantList"] =
-			(key, lookup) =>
-				Effect.gen(function* () {
-					const cached = yield* Cache.get(
-						listCache,
-						key,
-					).pipe(Effect.option);
+		const getRestaurantList: CacheServiceShape["getRestaurantList"] = (
+			key,
+			lookup,
+		) =>
+			Effect.gen(function* () {
+				const cached = yield* Cache.get(listCache, key).pipe(Effect.option);
 
-					if (
-						cached._tag === "Some" &&
-						cached.value.data.length > 0
-					) {
-						yield* Effect.logDebug(
-							"Cache HIT: restaurant list",
-							{ key },
-						);
+				if (cached._tag === "Some" && cached.value.data.length > 0) {
+					yield* Effect.logDebug("Cache HIT: restaurant list", { key });
 
-						return cached.value;
-					}
+					return cached.value;
+				}
 
-					yield* Effect.logDebug(
-						"Cache MISS: restaurant list",
-						{ key },
-					);
+				yield* Effect.logDebug("Cache MISS: restaurant list", { key });
 
-					const data = yield* lookup();
+				const data = yield* lookup();
 
-					yield* Cache.set(listCache, key, data);
+				yield* Cache.set(listCache, key, data);
 
-					return data;
+				return data;
+			});
+
+		const getRestaurantDetail: CacheServiceShape["getRestaurantDetail"] = (
+			key,
+			lookup,
+		) =>
+			Effect.gen(function* () {
+				const cached = yield* Cache.get(detailCache, key).pipe(
+					Effect.catchDefect(() => Effect.succeed(null)),
+					Effect.option,
+				);
+
+				if (cached._tag === "Some" && cached.value !== null) {
+					yield* Effect.logDebug("Cache HIT: restaurant detail", { key });
+
+					return cached.value;
+				}
+
+				yield* Effect.logDebug("Cache MISS: restaurant detail", { key });
+
+				const data = yield* lookup();
+
+				yield* Cache.set(detailCache, key, data);
+
+				return data;
+			});
+
+		const invalidateRestaurant: CacheServiceShape["invalidateRestaurant"] = (
+			restaurantId,
+		) =>
+			Effect.gen(function* () {
+				yield* Cache.invalidate(
+					detailCache,
+					CacheKeys.restaurantDetail(restaurantId),
+				);
+
+				yield* Effect.logDebug("Cache invalidated: restaurant detail", {
+					restaurantId,
 				});
-
-		const getRestaurantDetail: CacheServiceShape["getRestaurantDetail"] =
-			(key, lookup) =>
-				Effect.gen(function* () {
-					const cached = yield* Cache.get(
-						detailCache,
-						key,
-					).pipe(
-						Effect.catchDefect(() =>
-							Effect.succeed(null),
-						),
-						Effect.option,
-					);
-
-					if (
-						cached._tag === "Some" &&
-						cached.value !== null
-					) {
-						yield* Effect.logDebug(
-							"Cache HIT: restaurant detail",
-							{ key },
-						);
-
-						return cached.value;
-					}
-
-					yield* Effect.logDebug(
-						"Cache MISS: restaurant detail",
-						{ key },
-					);
-
-					const data = yield* lookup();
-
-					yield* Cache.set(
-						detailCache,
-						key,
-						data,
-					);
-
-					return data;
-				});
-
-		const invalidateRestaurant: CacheServiceShape["invalidateRestaurant"] =
-			(restaurantId) =>
-				Effect.gen(function* () {
-					yield* Cache.invalidate(
-						detailCache,
-						CacheKeys.restaurantDetail(
-							restaurantId,
-						),
-					);
-
-					yield* Effect.logDebug(
-						"Cache invalidated: restaurant detail",
-						{ restaurantId },
-					);
-				});
+			});
 
 		const invalidateRestaurantList: CacheServiceShape["invalidateRestaurantList"] =
 			() =>

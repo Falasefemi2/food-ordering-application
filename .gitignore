@@ -34,5 +34,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .DS_Store
 test-admin-flow.ts
 test-vendor-flow.ts
+test-full-flow.ts
 logs/
 *.log

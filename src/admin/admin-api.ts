@@ -2,9 +2,9 @@ import * as Schema from "effect/Schema";
 import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
 import { AuthMiddleware } from "../auth/auth-middleware";
 import {
-	NotFoundError,
-	ForbiddenError,
 	BusinessRuleError,
+	ForbiddenError,
+	NotFoundError,
 } from "../libs/errors";
 
 const AdminRestaurantResponse = Schema.Struct({
@@ -77,25 +77,17 @@ export class AdminApiGroup extends HttpApiGroup.make("admin")
 		),
 	)
 	.add(
-		HttpApiEndpoint.get(
-			"listAllRestaurants",
-			"/admin/restaurants",
-			{
-				success: Schema.Array(AdminRestaurantResponse),
-				error: [ForbiddenError],
-			},
-		),
+		HttpApiEndpoint.get("listAllRestaurants", "/admin/restaurants", {
+			success: Schema.Array(AdminRestaurantResponse),
+			error: [ForbiddenError],
+		}),
 	)
 	.add(
-		HttpApiEndpoint.get(
-			"getRestaurantDetail",
-			"/admin/restaurants/:id",
-			{
-				params: Schema.Struct({ id: Schema.String }),
-				success: AdminRestaurantResponse,
-				error: [NotFoundError, ForbiddenError],
-			},
-		),
+		HttpApiEndpoint.get("getRestaurantDetail", "/admin/restaurants/:id", {
+			params: Schema.Struct({ id: Schema.String }),
+			success: AdminRestaurantResponse,
+			error: [NotFoundError, ForbiddenError],
+		}),
 	)
 	.add(
 		HttpApiEndpoint.post(
@@ -104,35 +96,19 @@ export class AdminApiGroup extends HttpApiGroup.make("admin")
 			{
 				params: Schema.Struct({ id: Schema.String }),
 				success: AdminRestaurantResponse,
-				error: [
-					NotFoundError,
-					ForbiddenError,
-					BusinessRuleError,
-				],
+				error: [NotFoundError, ForbiddenError, BusinessRuleError],
 			},
 		),
 	)
 	.add(
-		HttpApiEndpoint.post(
-			"rejectRestaurant",
-			"/admin/restaurants/:id/reject",
-			{
-				params: Schema.Struct({ id: Schema.String }),
-				payload: Schema.Struct({
-					reason: Schema.String.pipe(
-						Schema.check(
-							Schema.isMinLength(10),
-						),
-					),
-				}),
-				success: AdminRestaurantResponse,
-				error: [
-					NotFoundError,
-					ForbiddenError,
-					BusinessRuleError,
-				],
-			},
-		),
+		HttpApiEndpoint.post("rejectRestaurant", "/admin/restaurants/:id/reject", {
+			params: Schema.Struct({ id: Schema.String }),
+			payload: Schema.Struct({
+				reason: Schema.String.pipe(Schema.check(Schema.isMinLength(10))),
+			}),
+			success: AdminRestaurantResponse,
+			error: [NotFoundError, ForbiddenError, BusinessRuleError],
+		}),
 	)
 	.add(
 		HttpApiEndpoint.post(
@@ -141,11 +117,7 @@ export class AdminApiGroup extends HttpApiGroup.make("admin")
 			{
 				params: Schema.Struct({ id: Schema.String }),
 				payload: Schema.Struct({
-					reason: Schema.String.pipe(
-						Schema.check(
-							Schema.isMinLength(10),
-						),
-					),
+					reason: Schema.String.pipe(Schema.check(Schema.isMinLength(10))),
 				}),
 				success: AdminRestaurantResponse,
 				error: [NotFoundError, ForbiddenError],
@@ -173,72 +145,40 @@ export class AdminApiGroup extends HttpApiGroup.make("admin")
 		}),
 	)
 	.add(
-		HttpApiEndpoint.post(
-			"deactivateUser",
-			"/admin/users/:id/deactivate",
-			{
-				params: Schema.Struct({ id: Schema.String }),
-				success: DeletedResponse,
-				error: [NotFoundError, ForbiddenError],
-			},
-		),
+		HttpApiEndpoint.post("deactivateUser", "/admin/users/:id/deactivate", {
+			params: Schema.Struct({ id: Schema.String }),
+			success: DeletedResponse,
+			error: [NotFoundError, ForbiddenError],
+		}),
 	)
 	.add(
-		HttpApiEndpoint.post(
-			"reactivateUser",
-			"/admin/users/:id/reactivate",
-			{
-				params: Schema.Struct({ id: Schema.String }),
-				success: DeletedResponse,
-				error: [NotFoundError, ForbiddenError],
-			},
-		),
+		HttpApiEndpoint.post("reactivateUser", "/admin/users/:id/reactivate", {
+			params: Schema.Struct({ id: Schema.String }),
+			success: DeletedResponse,
+			error: [NotFoundError, ForbiddenError],
+		}),
 	)
 	.add(
-		HttpApiEndpoint.get(
-			"listPendingDrivers",
-			"/admin/drivers/pending",
-			{
-				success: Schema.Array(PendingDriverResponse),
-				error: [ForbiddenError],
-			},
-		),
+		HttpApiEndpoint.get("listPendingDrivers", "/admin/drivers/pending", {
+			success: Schema.Array(PendingDriverResponse),
+			error: [ForbiddenError],
+		}),
 	)
 	.add(
-		HttpApiEndpoint.post(
-			"approveDriver",
-			"/admin/drivers/:id/approve",
-			{
-				params: Schema.Struct({ id: Schema.String }),
-				success: DeletedResponse,
-				error: [
-					NotFoundError,
-					ForbiddenError,
-					BusinessRuleError,
-				],
-			},
-		),
+		HttpApiEndpoint.post("approveDriver", "/admin/drivers/:id/approve", {
+			params: Schema.Struct({ id: Schema.String }),
+			success: DeletedResponse,
+			error: [NotFoundError, ForbiddenError, BusinessRuleError],
+		}),
 	)
 	.add(
-		HttpApiEndpoint.post(
-			"rejectDriver",
-			"/admin/drivers/:id/reject",
-			{
-				params: Schema.Struct({ id: Schema.String }),
-				payload: Schema.Struct({
-					reason: Schema.String.pipe(
-						Schema.check(
-							Schema.isMinLength(10),
-						),
-					),
-				}),
-				success: DeletedResponse,
-				error: [
-					NotFoundError,
-					ForbiddenError,
-					BusinessRuleError,
-				],
-			},
-		),
+		HttpApiEndpoint.post("rejectDriver", "/admin/drivers/:id/reject", {
+			params: Schema.Struct({ id: Schema.String }),
+			payload: Schema.Struct({
+				reason: Schema.String.pipe(Schema.check(Schema.isMinLength(10))),
+			}),
+			success: DeletedResponse,
+			error: [NotFoundError, ForbiddenError, BusinessRuleError],
+		}),
 	)
 	.middleware(AuthMiddleware) {}
