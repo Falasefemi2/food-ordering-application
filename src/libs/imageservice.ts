@@ -25,6 +25,14 @@ export const UploadFolder = {
 
 export type UploadFolder = (typeof UploadFolder)[keyof typeof UploadFolder];
 
+const MaxImageBytes = 5 * 1024 * 1024;
+const AllowedImageExtensions = new Set(["jpg", "jpeg", "png", "webp"]);
+const AllowedImageMimeTypes = new Set([
+	"image/jpeg",
+	"image/png",
+	"image/webp",
+]);
+
 interface ImageUploadServiceShape {
 	uploadFile: (
 		fileName: string,
@@ -144,7 +152,30 @@ export const ImageUploadLive = Layer.effect(
 
 				const [, parts] = fileEntry;
 				const file = (parts as Multipart.PersistedFile[])[0]!;
-				const ext = file.name?.split(".").pop() ?? "jpg";
+				const ext = file.name?.split(".").pop()?.toLowerCase() ?? "jpg";
+				if (!AllowedImageExtensions.has(ext)) {
+					return yield* new ImageUploadError({
+						message: "Only JPG, PNG, and WEBP images are allowed",
+					});
+				}
+
+				const contentType = "contentType" in file ? file.contentType : undefined;
+				if (
+					typeof contentType === "string" &&
+					!AllowedImageMimeTypes.has(contentType.toLowerCase())
+				) {
+					return yield* new ImageUploadError({
+						message: "Only JPG, PNG, and WEBP images are allowed",
+					});
+				}
+
+				const localFile = Bun.file(file.path);
+				if (localFile.size > MaxImageBytes) {
+					return yield* new ImageUploadError({
+						message: "Image must be 5MB or smaller",
+					});
+				}
+
 				const baseName = publicIdPrefix
 					? `${publicIdPrefix}-${Date.now()}`
 					: `${Date.now()}`;

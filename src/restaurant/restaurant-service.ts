@@ -217,6 +217,21 @@ export interface RestaurantServiceShape {
 		ownerId: string,
 	) => Effect.Effect<void, DbError | NotFoundError | ForbiddenError>;
 
+	listCategories: (
+		restaurantId: string,
+		ownerId: string,
+		pagination: PaginationParams,
+	) => Effect.Effect<
+		PaginatedResult<MenuCategoryRow>,
+		DbError | NotFoundError | ForbiddenError
+	>;
+
+	getCategory: (
+		restaurantId: string,
+		categoryId: string,
+		ownerId: string,
+	) => Effect.Effect<MenuCategoryRow, DbError | NotFoundError | ForbiddenError>;
+
 	createMenuItem: (
 		restaurantId: string,
 		categoryId: string,
@@ -249,6 +264,22 @@ export interface RestaurantServiceShape {
 		itemId: string,
 		ownerId: string,
 	) => Effect.Effect<void, DbError | NotFoundError | ForbiddenError>;
+
+	listMenuItems: (
+		restaurantId: string,
+		ownerId: string,
+		pagination: PaginationParams,
+		filters?: { categoryId?: string },
+	) => Effect.Effect<
+		PaginatedResult<MenuItemRow>,
+		DbError | NotFoundError | ForbiddenError
+	>;
+
+	getMenuItem: (
+		restaurantId: string,
+		itemId: string,
+		ownerId: string,
+	) => Effect.Effect<MenuItemRow, DbError | NotFoundError | ForbiddenError>;
 
 	createCustomizationGroup: (
 		restaurantId: string,
@@ -288,6 +319,26 @@ export interface RestaurantServiceShape {
 		ownerId: string,
 	) => Effect.Effect<void, DbError | NotFoundError | ForbiddenError>;
 
+	listCustomizationGroups: (
+		restaurantId: string,
+		itemId: string,
+		ownerId: string,
+		pagination: PaginationParams,
+	) => Effect.Effect<
+		PaginatedResult<CustomizationGroupRow>,
+		DbError | NotFoundError | ForbiddenError
+	>;
+
+	getCustomizationGroup: (
+		restaurantId: string,
+		itemId: string,
+		groupId: string,
+		ownerId: string,
+	) => Effect.Effect<
+		CustomizationGroupRow,
+		DbError | NotFoundError | ForbiddenError
+	>;
+
 	createCustomizationOption: (
 		restaurantId: string,
 		itemId: string,
@@ -318,6 +369,28 @@ export interface RestaurantServiceShape {
 		optionId: string,
 		ownerId: string,
 	) => Effect.Effect<void, DbError | NotFoundError | ForbiddenError>;
+
+	listCustomizationOptions: (
+		restaurantId: string,
+		itemId: string,
+		groupId: string,
+		ownerId: string,
+		pagination: PaginationParams,
+	) => Effect.Effect<
+		PaginatedResult<CustomizationOptionRow>,
+		DbError | NotFoundError | ForbiddenError
+	>;
+
+	getCustomizationOption: (
+		restaurantId: string,
+		itemId: string,
+		groupId: string,
+		optionId: string,
+		ownerId: string,
+	) => Effect.Effect<
+		CustomizationOptionRow,
+		DbError | NotFoundError | ForbiddenError
+	>;
 
 	listRestaurants: (
 		pagination: PaginationParams,

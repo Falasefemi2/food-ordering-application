@@ -73,6 +73,24 @@ export interface AuthServiceShape {
 			lastName: string;
 			role: string;
 			walletBalance: string;
+			avatarUrl: string | null;
+			createdAt: string;
+		},
+		DbError | NotFoundError
+	>;
+
+	updateAvatar: (
+		id: string,
+		avatarUrl: string,
+	) => Effect.Effect<
+		{
+			id: string;
+			email: string;
+			firstName: string;
+			lastName: string;
+			role: string;
+			walletBalance: string;
+			avatarUrl: string | null;
 			createdAt: string;
 		},
 		DbError | NotFoundError

@@ -467,11 +467,45 @@ export const AuthLive = Layer.effect(
 							lastName: users.lastName,
 							role: users.role,
 							walletBalance: users.walletBalance,
+							avatarUrl: users.avatarUrl,
 							createdAt: users.createdAt,
 						})
 						.from(users)
 						.where(and(eq(users.id, id), isNull(users.deletedAt)))
 						.limit(1),
+				);
+				if (!user)
+					return yield* new NotFoundError({
+						resource: "User",
+						id,
+					});
+				return {
+					...user,
+					walletBalance: user.walletBalance.toString(),
+					createdAt: user.createdAt.toISOString(),
+				};
+			});
+
+		const updateAvatar: AuthServiceShape["updateAvatar"] = (id, avatarUrl) =>
+			Effect.gen(function* () {
+				const [user] = yield* dbQuery(
+					db
+						.update(users)
+						.set({
+							avatarUrl,
+							updatedAt: new Date(),
+						})
+						.where(and(eq(users.id, id), isNull(users.deletedAt)))
+						.returning({
+							id: users.id,
+							email: users.email,
+							firstName: users.firstName,
+							lastName: users.lastName,
+							role: users.role,
+							walletBalance: users.walletBalance,
+							avatarUrl: users.avatarUrl,
+							createdAt: users.createdAt,
+						}),
 				);
 				if (!user)
 					return yield* new NotFoundError({
@@ -493,6 +527,7 @@ export const AuthLive = Layer.effect(
 			revokeSession,
 			revokeAllUserSessions,
 			getMe,
+			updateAvatar,
 		};
 	}),
 );

@@ -4,9 +4,11 @@ import { AuthMiddleware } from "../auth/auth-middleware";
 import {
 	BusinessRuleError,
 	ConflictError,
+	DbError,
 	ForbiddenError,
 	NotFoundError,
 } from "../libs/errors";
+import { ImageUploadError } from "../libs/imageservice";
 
 const DriverProfileResponse = Schema.Struct({
 	id: Schema.String,
@@ -73,6 +75,31 @@ export class DriverApiGroup extends HttpApiGroup.make("driver")
 			success: DriverProfileResponse,
 			error: [NotFoundError, ForbiddenError],
 		}).middleware(AuthMiddleware),
+	)
+	.add(
+		HttpApiEndpoint.post("uploadDriverLicenseImage", "/drivers/me/license-image", {
+			disableCodecs: true,
+			success: DriverProfileResponse,
+			error: [NotFoundError, ForbiddenError, ImageUploadError, DbError],
+		}).middleware(AuthMiddleware),
+	)
+	.add(
+		HttpApiEndpoint.post("uploadDriverVehicleImage", "/drivers/me/vehicle-image", {
+			disableCodecs: true,
+			success: DriverProfileResponse,
+			error: [NotFoundError, ForbiddenError, ImageUploadError, DbError],
+		}).middleware(AuthMiddleware),
+	)
+	.add(
+		HttpApiEndpoint.post(
+			"uploadDriverNationalIdImage",
+			"/drivers/me/national-id-image",
+			{
+				disableCodecs: true,
+				success: DriverProfileResponse,
+				error: [NotFoundError, ForbiddenError, ImageUploadError, DbError],
+			},
+		).middleware(AuthMiddleware),
 	)
 	.add(
 		HttpApiEndpoint.patch("updateDriverStatus", "/drivers/me/status", {

@@ -18,6 +18,10 @@ import {
 	NotFoundError,
 } from "../libs/errors";
 import {
+	type CustomizationGroupRow,
+	type CustomizationOptionRow,
+	type MenuCategoryRow,
+	type MenuItemRow,
 	type PublicRestaurantDetailRow,
 	type PublicRestaurantRow,
 	type RestaurantRow,
@@ -119,6 +123,85 @@ const toPublicRestaurantRow = (r: {
 	ratingAvg: r.ratingAvg,
 	ratingCount: r.ratingCount,
 });
+
+const toMenuCategoryRow = (row: {
+	id: string;
+	restaurantId: string;
+	name: string;
+	description: string | null;
+	sortOrder: number;
+	isActive: boolean;
+	createdAt: Date;
+	updatedAt: Date;
+}): MenuCategoryRow => ({
+	...row,
+	createdAt: row.createdAt.toISOString(),
+	updatedAt: row.updatedAt.toISOString(),
+});
+
+const toMenuItemRow = (row: {
+	id: string;
+	categoryId: string;
+	restaurantId: string;
+	name: string;
+	description: string | null;
+	price: string;
+	imageUrl: string | null;
+	isAvailable: boolean;
+	isVegetarian: boolean;
+	calories: number | null;
+	createdAt: Date;
+	updatedAt: Date;
+}): MenuItemRow => ({
+	...row,
+	createdAt: row.createdAt.toISOString(),
+	updatedAt: row.updatedAt.toISOString(),
+});
+
+const toCustomizationGroupRow = (
+	row: {
+		id: string;
+		menuItemId: string;
+		name: string;
+		minSelectable: number;
+		maxSelectable: number;
+		isRequired: boolean;
+		createdAt: Date;
+		updatedAt: Date;
+	},
+): CustomizationGroupRow => ({
+	...row,
+	createdAt: row.createdAt.toISOString(),
+	updatedAt: row.updatedAt.toISOString(),
+});
+
+const toCustomizationOptionRow = (
+	row: {
+		id: string;
+		groupId: string;
+		name: string;
+		price: string;
+		isAvailable: boolean;
+		createdAt: Date;
+		updatedAt: Date;
+	},
+): CustomizationOptionRow => ({
+	...row,
+	createdAt: row.createdAt.toISOString(),
+	updatedAt: row.updatedAt.toISOString(),
+});
+
+const pageMeta = (total: number, page: number, limit: number) => {
+	const totalPages = Math.ceil(total / limit);
+	return {
+		total,
+		page,
+		limit,
+		totalPages,
+		hasNext: page < totalPages,
+		hasPrev: page > 1,
+	};
+};
 
 export const RestaurantLive = Layer.effect(
 	RestaurantService,
@@ -413,6 +496,64 @@ export const RestaurantLive = Layer.effect(
 					});
 			});
 
+		const listCategories: RestaurantServiceShape["listCategories"] = (
+			restaurantId,
+			ownerId,
+			pagination,
+		) =>
+			Effect.gen(function* () {
+				yield* assertOwner(ownerId, restaurantId);
+				const { page, limit } = pagination;
+				const offset = (page - 1) * limit;
+				const conditions = eq(menuCategories.restaurantId, restaurantId);
+
+				const [totalResult] = yield* dbQuery(
+					db.select({ count: count() }).from(menuCategories).where(conditions),
+				);
+				const rows = yield* dbQuery(
+					db
+						.select()
+						.from(menuCategories)
+						.where(conditions)
+						.limit(limit)
+						.offset(offset),
+				);
+				const total = Number(totalResult?.count ?? 0);
+
+				return {
+					data: rows.map(toMenuCategoryRow),
+					...pageMeta(total, page, limit),
+				};
+			});
+
+		const getCategory: RestaurantServiceShape["getCategory"] = (
+			restaurantId,
+			categoryId,
+			ownerId,
+		) =>
+			Effect.gen(function* () {
+				yield* assertOwner(ownerId, restaurantId);
+				const [row] = yield* dbQuery(
+					db
+						.select()
+						.from(menuCategories)
+						.where(
+							and(
+								eq(menuCategories.id, categoryId),
+								eq(menuCategories.restaurantId, restaurantId),
+							),
+						)
+						.limit(1),
+				);
+				if (!row)
+					return yield* new NotFoundError({
+						resource: "MenuCategory",
+						id: categoryId,
+					});
+
+				return toMenuCategoryRow(row);
+			});
+
 		const createMenuItem: RestaurantServiceShape["createMenuItem"] = (
 			restaurantId,
 			categoryId,
@@ -515,6 +656,72 @@ export const RestaurantLive = Layer.effect(
 					});
 			});
 
+		const listMenuItems: RestaurantServiceShape["listMenuItems"] = (
+			restaurantId,
+			ownerId,
+			pagination,
+			filters,
+		) =>
+			Effect.gen(function* () {
+				yield* assertOwner(ownerId, restaurantId);
+				const { page, limit } = pagination;
+				const offset = (page - 1) * limit;
+				const conditions = and(
+					eq(menuItems.restaurantId, restaurantId),
+					isNull(menuItems.deletedAt),
+					filters?.categoryId
+						? eq(menuItems.categoryId, filters.categoryId)
+						: undefined,
+				);
+
+				const [totalResult] = yield* dbQuery(
+					db.select({ count: count() }).from(menuItems).where(conditions),
+				);
+				const rows = yield* dbQuery(
+					db
+						.select()
+						.from(menuItems)
+						.where(conditions)
+						.limit(limit)
+						.offset(offset),
+				);
+				const total = Number(totalResult?.count ?? 0);
+
+				return {
+					data: rows.map(toMenuItemRow),
+					...pageMeta(total, page, limit),
+				};
+			});
+
+		const getMenuItem: RestaurantServiceShape["getMenuItem"] = (
+			restaurantId,
+			itemId,
+			ownerId,
+		) =>
+			Effect.gen(function* () {
+				yield* assertOwner(ownerId, restaurantId);
+				const [row] = yield* dbQuery(
+					db
+						.select()
+						.from(menuItems)
+						.where(
+							and(
+								eq(menuItems.id, itemId),
+								eq(menuItems.restaurantId, restaurantId),
+								isNull(menuItems.deletedAt),
+							),
+						)
+						.limit(1),
+				);
+				if (!row)
+					return yield* new NotFoundError({
+						resource: "MenuItem",
+						id: itemId,
+					});
+
+				return toMenuItemRow(row);
+			});
+
 		const createCustomizationGroup: RestaurantServiceShape["createCustomizationGroup"] =
 			(restaurantId, itemId, ownerId, input) =>
 				Effect.gen(function* () {
@@ -601,6 +808,63 @@ export const RestaurantLive = Layer.effect(
 							resource: "CustomizationGroup",
 							id: groupId,
 						});
+				});
+
+		const listCustomizationGroups: RestaurantServiceShape["listCustomizationGroups"] =
+			(restaurantId, itemId, ownerId, pagination) =>
+				Effect.gen(function* () {
+					yield* assertOwner(ownerId, restaurantId);
+					yield* assertItemBelongsToRestaurant(itemId, restaurantId);
+					const { page, limit } = pagination;
+					const offset = (page - 1) * limit;
+					const conditions = eq(customizationGroups.menuItemId, itemId);
+
+					const [totalResult] = yield* dbQuery(
+						db
+							.select({ count: count() })
+							.from(customizationGroups)
+							.where(conditions),
+					);
+					const rows = yield* dbQuery(
+						db
+							.select()
+							.from(customizationGroups)
+							.where(conditions)
+							.limit(limit)
+							.offset(offset),
+					);
+					const total = Number(totalResult?.count ?? 0);
+
+					return {
+						data: rows.map(toCustomizationGroupRow),
+						...pageMeta(total, page, limit),
+					};
+				});
+
+		const getCustomizationGroup: RestaurantServiceShape["getCustomizationGroup"] =
+			(restaurantId, itemId, groupId, ownerId) =>
+				Effect.gen(function* () {
+					yield* assertOwner(ownerId, restaurantId);
+					yield* assertItemBelongsToRestaurant(itemId, restaurantId);
+					const [row] = yield* dbQuery(
+						db
+							.select()
+							.from(customizationGroups)
+							.where(
+								and(
+									eq(customizationGroups.id, groupId),
+									eq(customizationGroups.menuItemId, itemId),
+								),
+							)
+							.limit(1),
+					);
+					if (!row)
+						return yield* new NotFoundError({
+							resource: "CustomizationGroup",
+							id: groupId,
+						});
+
+					return toCustomizationGroupRow(row);
 				});
 
 		const createCustomizationOption: RestaurantServiceShape["createCustomizationOption"] =
@@ -692,6 +956,65 @@ export const RestaurantLive = Layer.effect(
 						});
 				});
 
+		const listCustomizationOptions: RestaurantServiceShape["listCustomizationOptions"] =
+			(restaurantId, itemId, groupId, ownerId, pagination) =>
+				Effect.gen(function* () {
+					yield* assertOwner(ownerId, restaurantId);
+					yield* assertItemBelongsToRestaurant(itemId, restaurantId);
+					yield* assertGroupBelongsToItem(groupId, itemId);
+					const { page, limit } = pagination;
+					const offset = (page - 1) * limit;
+					const conditions = eq(customizationOptions.groupId, groupId);
+
+					const [totalResult] = yield* dbQuery(
+						db
+							.select({ count: count() })
+							.from(customizationOptions)
+							.where(conditions),
+					);
+					const rows = yield* dbQuery(
+						db
+							.select()
+							.from(customizationOptions)
+							.where(conditions)
+							.limit(limit)
+							.offset(offset),
+					);
+					const total = Number(totalResult?.count ?? 0);
+
+					return {
+						data: rows.map(toCustomizationOptionRow),
+						...pageMeta(total, page, limit),
+					};
+				});
+
+		const getCustomizationOption: RestaurantServiceShape["getCustomizationOption"] =
+			(restaurantId, itemId, groupId, optionId, ownerId) =>
+				Effect.gen(function* () {
+					yield* assertOwner(ownerId, restaurantId);
+					yield* assertItemBelongsToRestaurant(itemId, restaurantId);
+					yield* assertGroupBelongsToItem(groupId, itemId);
+					const [row] = yield* dbQuery(
+						db
+							.select()
+							.from(customizationOptions)
+							.where(
+								and(
+									eq(customizationOptions.id, optionId),
+									eq(customizationOptions.groupId, groupId),
+								),
+							)
+							.limit(1),
+					);
+					if (!row)
+						return yield* new NotFoundError({
+							resource: "CustomizationOption",
+							id: optionId,
+						});
+
+					return toCustomizationOptionRow(row);
+				});
+
 		const listRestaurants: RestaurantServiceShape["listRestaurants"] = (
 			pagination,
 			filters,
@@ -744,16 +1067,11 @@ export const RestaurantLive = Layer.effect(
 						.offset(offset),
 				);
 
-				const total = Number(totalResult?.count);
+				const total = Number(totalResult?.count ?? 0);
 
 				return {
 					data: rows.map(toPublicRestaurantRow),
-					total,
-					page,
-					limit,
-					totalPages: Math.ceil(total / limit),
-					hasNext: page < Math.ceil(total / limit),
-					hasPrev: page > 1,
+					...pageMeta(total, page, limit),
 				};
 			});
 
@@ -947,15 +1265,23 @@ export const RestaurantLive = Layer.effect(
 			createCategory,
 			updateCategory,
 			deleteCategory,
+			listCategories,
+			getCategory,
 			createMenuItem,
 			updateMenuItem,
 			deleteMenuItem,
+			listMenuItems,
+			getMenuItem,
 			createCustomizationGroup,
 			updateCustomizationGroup,
 			deleteCustomizationGroup,
+			listCustomizationGroups,
+			getCustomizationGroup,
 			createCustomizationOption,
 			updateCustomizationOption,
 			deleteCustomizationOption,
+			listCustomizationOptions,
+			getCustomizationOption,
 			listRestaurants,
 			getRestaurant,
 		};

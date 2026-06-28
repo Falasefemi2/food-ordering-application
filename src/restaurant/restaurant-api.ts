@@ -145,25 +145,70 @@ const TimePattern = Schema.String.pipe(
 	Schema.check(Schema.isPattern(/^\d{2}:\d{2}$/)),
 );
 
-export const PaginationSchema = Schema.Struct({
-	page: Schema.optional(
-		Schema.NumberFromString.pipe(
-			Schema.check(Schema.isGreaterThanOrEqualTo(1)),
-		),
+const PageQueryField = Schema.optional(
+	Schema.NumberFromString.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(1))),
+);
+const LimitQueryField = Schema.optional(
+	Schema.NumberFromString.pipe(
+		Schema.check(Schema.isGreaterThanOrEqualTo(1)),
+		Schema.check(Schema.isLessThanOrEqualTo(100)),
 	),
-	limit: Schema.optional(
-		Schema.NumberFromString.pipe(
-			Schema.check(Schema.isGreaterThanOrEqualTo(1)),
-			Schema.check(Schema.isLessThanOrEqualTo(100)),
-		),
-	),
+);
 
+export const PaginationSchema = Schema.Struct({
+	page: PageQueryField,
+	limit: LimitQueryField,
 	city: Schema.optional(Schema.String),
 	isOpen: Schema.optional(Schema.Boolean),
 });
 
 const PaginatedRestaurantSchema = Schema.Struct({
 	data: Schema.Array(PublicRestaurantResponse),
+	total: Schema.Number,
+	page: Schema.Number,
+	limit: Schema.Number,
+	totalPages: Schema.Number,
+	hasNext: Schema.Boolean,
+	hasPrev: Schema.Boolean,
+});
+
+const PageQuerySchema = Schema.Struct({
+	page: PageQueryField,
+	limit: LimitQueryField,
+});
+
+const PaginatedMenuCategorySchema = Schema.Struct({
+	data: Schema.Array(FlatMenuCategoryResponse),
+	total: Schema.Number,
+	page: Schema.Number,
+	limit: Schema.Number,
+	totalPages: Schema.Number,
+	hasNext: Schema.Boolean,
+	hasPrev: Schema.Boolean,
+});
+
+const PaginatedMenuItemSchema = Schema.Struct({
+	data: Schema.Array(FlatMenuItemResponse),
+	total: Schema.Number,
+	page: Schema.Number,
+	limit: Schema.Number,
+	totalPages: Schema.Number,
+	hasNext: Schema.Boolean,
+	hasPrev: Schema.Boolean,
+});
+
+const PaginatedCustomizationGroupSchema = Schema.Struct({
+	data: Schema.Array(FlatCustomizationGroupResponse),
+	total: Schema.Number,
+	page: Schema.Number,
+	limit: Schema.Number,
+	totalPages: Schema.Number,
+	hasNext: Schema.Boolean,
+	hasPrev: Schema.Boolean,
+});
+
+const PaginatedCustomizationOptionSchema = Schema.Struct({
+	data: Schema.Array(FlatCustomizationOptionResponse),
 	total: Schema.Number,
 	page: Schema.Number,
 	limit: Schema.Number,
@@ -180,13 +225,6 @@ export class RestaurantApiGroup extends HttpApiGroup.make("restaurant")
 			}),
 			success: PaginatedRestaurantSchema,
 			error: [],
-		}),
-	)
-	.add(
-		HttpApiEndpoint.get("getRestaurant", "/restaurants/:id", {
-			params: Schema.Struct({ id: Schema.String }),
-			success: PublicRestaurantDetailResponse,
-			error: [NotFoundError],
 		}),
 	)
 	.add(
@@ -219,6 +257,13 @@ export class RestaurantApiGroup extends HttpApiGroup.make("restaurant")
 		}).middleware(AuthMiddleware),
 	)
 	.add(
+		HttpApiEndpoint.get("getRestaurant", "/restaurants/:id", {
+			params: Schema.Struct({ id: Schema.String }),
+			success: PublicRestaurantDetailResponse,
+			error: [NotFoundError],
+		}),
+	)
+	.add(
 		HttpApiEndpoint.patch("updateRestaurant", "/restaurants/:id", {
 			params: Schema.Struct({ id: Schema.String }),
 			payload: Schema.Struct({
@@ -239,6 +284,28 @@ export class RestaurantApiGroup extends HttpApiGroup.make("restaurant")
 			success: RestaurantResponse,
 			error: [NotFoundError, ForbiddenError, BusinessRuleError],
 		}).middleware(AuthMiddleware),
+	)
+	.add(
+		HttpApiEndpoint.get("listCategories", "/restaurants/:id/categories", {
+			params: Schema.Struct({ id: Schema.String }),
+			query: PageQuerySchema,
+			success: PaginatedMenuCategorySchema,
+			error: [NotFoundError, ForbiddenError],
+		}).middleware(AuthMiddleware),
+	)
+	.add(
+		HttpApiEndpoint.get(
+			"getCategory",
+			"/restaurants/:id/categories/:categoryId",
+			{
+				params: Schema.Struct({
+					id: Schema.String,
+					categoryId: Schema.String,
+				}),
+				success: FlatMenuCategoryResponse,
+				error: [NotFoundError, ForbiddenError],
+			},
+		).middleware(AuthMiddleware),
 	)
 	.add(
 		HttpApiEndpoint.post("createCategory", "/restaurants/:id/categories", {
@@ -285,6 +352,27 @@ export class RestaurantApiGroup extends HttpApiGroup.make("restaurant")
 				error: [NotFoundError, ForbiddenError],
 			},
 		).middleware(AuthMiddleware),
+	)
+	.add(
+		HttpApiEndpoint.get("listMenuItems", "/restaurants/:id/items", {
+			params: Schema.Struct({ id: Schema.String }),
+			query: Schema.Struct({
+				...PageQuerySchema.fields,
+				categoryId: Schema.optional(Schema.String),
+			}),
+			success: PaginatedMenuItemSchema,
+			error: [NotFoundError, ForbiddenError],
+		}).middleware(AuthMiddleware),
+	)
+	.add(
+		HttpApiEndpoint.get("getMenuItem", "/restaurants/:id/items/:itemId", {
+			params: Schema.Struct({
+				id: Schema.String,
+				itemId: Schema.String,
+			}),
+			success: FlatMenuItemResponse,
+			error: [NotFoundError, ForbiddenError],
+		}).middleware(AuthMiddleware),
 	)
 	.add(
 		HttpApiEndpoint.post(
@@ -334,6 +422,36 @@ export class RestaurantApiGroup extends HttpApiGroup.make("restaurant")
 			success: DeletedResponse,
 			error: [NotFoundError, ForbiddenError],
 		}).middleware(AuthMiddleware),
+	)
+	.add(
+		HttpApiEndpoint.get(
+			"listCustomizationGroups",
+			"/restaurants/:id/items/:itemId/groups",
+			{
+				params: Schema.Struct({
+					id: Schema.String,
+					itemId: Schema.String,
+				}),
+				query: PageQuerySchema,
+				success: PaginatedCustomizationGroupSchema,
+				error: [NotFoundError, ForbiddenError],
+			},
+		).middleware(AuthMiddleware),
+	)
+	.add(
+		HttpApiEndpoint.get(
+			"getCustomizationGroup",
+			"/restaurants/:id/items/:itemId/groups/:groupId",
+			{
+				params: Schema.Struct({
+					id: Schema.String,
+					itemId: Schema.String,
+					groupId: Schema.String,
+				}),
+				success: FlatCustomizationGroupResponse,
+				error: [NotFoundError, ForbiddenError],
+			},
+		).middleware(AuthMiddleware),
 	)
 	.add(
 		HttpApiEndpoint.post(
@@ -387,6 +505,38 @@ export class RestaurantApiGroup extends HttpApiGroup.make("restaurant")
 					groupId: Schema.String,
 				}),
 				success: DeletedResponse,
+				error: [NotFoundError, ForbiddenError],
+			},
+		).middleware(AuthMiddleware),
+	)
+	.add(
+		HttpApiEndpoint.get(
+			"listCustomizationOptions",
+			"/restaurants/:id/items/:itemId/groups/:groupId/options",
+			{
+				params: Schema.Struct({
+					id: Schema.String,
+					itemId: Schema.String,
+					groupId: Schema.String,
+				}),
+				query: PageQuerySchema,
+				success: PaginatedCustomizationOptionSchema,
+				error: [NotFoundError, ForbiddenError],
+			},
+		).middleware(AuthMiddleware),
+	)
+	.add(
+		HttpApiEndpoint.get(
+			"getCustomizationOption",
+			"/restaurants/:id/items/:itemId/groups/:groupId/options/:optionId",
+			{
+				params: Schema.Struct({
+					id: Schema.String,
+					itemId: Schema.String,
+					groupId: Schema.String,
+					optionId: Schema.String,
+				}),
+				success: FlatCustomizationOptionResponse,
 				error: [NotFoundError, ForbiddenError],
 			},
 		).middleware(AuthMiddleware),

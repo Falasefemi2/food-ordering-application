@@ -15,6 +15,11 @@ const vendorOnly = (role: string) =>
 				}),
 			);
 
+const paginationFromQuery = (query: { page?: number; limit?: number }) => ({
+	page: Number(query.page ?? 1),
+	limit: Number(query.limit ?? 20),
+});
+
 export const RestaurantHandlers = HttpApiBuilder.group(
 	Api,
 	"restaurant",
@@ -86,6 +91,24 @@ export const RestaurantHandlers = HttpApiBuilder.group(
 						.pipe(Effect.catchTag("DbError", Effect.orDie));
 				}),
 			)
+			.handle("listCategories", ({ params, query }) =>
+				Effect.gen(function* () {
+					const { sub: ownerId, role } = yield* AuthContext;
+					yield* vendorOnly(role);
+					return yield* restaurant
+						.listCategories(params.id, ownerId, paginationFromQuery(query))
+						.pipe(Effect.catchTag("DbError", Effect.orDie));
+				}),
+			)
+			.handle("getCategory", ({ params }) =>
+				Effect.gen(function* () {
+					const { sub: ownerId, role } = yield* AuthContext;
+					yield* vendorOnly(role);
+					return yield* restaurant
+						.getCategory(params.id, params.categoryId, ownerId)
+						.pipe(Effect.catchTag("DbError", Effect.orDie));
+				}),
+			)
 			.handle("createCategory", ({ params, payload }) =>
 				Effect.gen(function* () {
 					const { sub: ownerId, role } = yield* AuthContext;
@@ -116,6 +139,26 @@ export const RestaurantHandlers = HttpApiBuilder.group(
 					};
 				}),
 			)
+			.handle("listMenuItems", ({ params, query }) =>
+				Effect.gen(function* () {
+					const { sub: ownerId, role } = yield* AuthContext;
+					yield* vendorOnly(role);
+					return yield* restaurant
+						.listMenuItems(params.id, ownerId, paginationFromQuery(query), {
+							categoryId: query.categoryId,
+						})
+						.pipe(Effect.catchTag("DbError", Effect.orDie));
+				}),
+			)
+			.handle("getMenuItem", ({ params }) =>
+				Effect.gen(function* () {
+					const { sub: ownerId, role } = yield* AuthContext;
+					yield* vendorOnly(role);
+					return yield* restaurant
+						.getMenuItem(params.id, params.itemId, ownerId)
+						.pipe(Effect.catchTag("DbError", Effect.orDie));
+				}),
+			)
 			.handle("createMenuItem", ({ params, payload }) =>
 				Effect.gen(function* () {
 					const { sub: ownerId, role } = yield* AuthContext;
@@ -144,6 +187,34 @@ export const RestaurantHandlers = HttpApiBuilder.group(
 					return {
 						message: "Menu item deleted",
 					};
+				}),
+			)
+			.handle("listCustomizationGroups", ({ params, query }) =>
+				Effect.gen(function* () {
+					const { sub: ownerId, role } = yield* AuthContext;
+					yield* vendorOnly(role);
+					return yield* restaurant
+						.listCustomizationGroups(
+							params.id,
+							params.itemId,
+							ownerId,
+							paginationFromQuery(query),
+						)
+						.pipe(Effect.catchTag("DbError", Effect.orDie));
+				}),
+			)
+			.handle("getCustomizationGroup", ({ params }) =>
+				Effect.gen(function* () {
+					const { sub: ownerId, role } = yield* AuthContext;
+					yield* vendorOnly(role);
+					return yield* restaurant
+						.getCustomizationGroup(
+							params.id,
+							params.itemId,
+							params.groupId,
+							ownerId,
+						)
+						.pipe(Effect.catchTag("DbError", Effect.orDie));
 				}),
 			)
 			.handle("createCustomizationGroup", ({ params, payload }) =>
@@ -190,6 +261,36 @@ export const RestaurantHandlers = HttpApiBuilder.group(
 					return {
 						message: "Customization group deleted",
 					};
+				}),
+			)
+			.handle("listCustomizationOptions", ({ params, query }) =>
+				Effect.gen(function* () {
+					const { sub: ownerId, role } = yield* AuthContext;
+					yield* vendorOnly(role);
+					return yield* restaurant
+						.listCustomizationOptions(
+							params.id,
+							params.itemId,
+							params.groupId,
+							ownerId,
+							paginationFromQuery(query),
+						)
+						.pipe(Effect.catchTag("DbError", Effect.orDie));
+				}),
+			)
+			.handle("getCustomizationOption", ({ params }) =>
+				Effect.gen(function* () {
+					const { sub: ownerId, role } = yield* AuthContext;
+					yield* vendorOnly(role);
+					return yield* restaurant
+						.getCustomizationOption(
+							params.id,
+							params.itemId,
+							params.groupId,
+							params.optionId,
+							ownerId,
+						)
+						.pipe(Effect.catchTag("DbError", Effect.orDie));
 				}),
 			)
 			.handle("createCustomizationOption", ({ params, payload }) =>
