@@ -7,10 +7,13 @@ import {
 import { RateLimiter } from "effect/unstable/persistence";
 import {
 	ConflictError,
+	DbError,
 	InvalidTokenError,
+	NotFoundError,
 	TokenExpiredError,
 	UnauthorizedError,
 } from "../libs/errors";
+import { ImageUploadError as UploadError } from "../libs/imageservice";
 import { AuthMiddleware } from "./auth-middleware";
 
 const TokenPair = Schema.Struct({
@@ -31,6 +34,7 @@ const UserProfile = Schema.Struct({
 	lastName: Schema.String,
 	role: Schema.String,
 	walletBalance: Schema.String,
+	avatarUrl: Schema.NullOr(Schema.String),
 	createdAt: Schema.String,
 });
 
@@ -100,6 +104,13 @@ export class AuthApiGroup extends HttpApiGroup.make("auth")
 	.add(
 		HttpApiEndpoint.get("me", "/auth/me", {
 			success: UserProfile,
-			error: [],
+			error: [NotFoundError],
+		}).middleware(AuthMiddleware),
+	)
+	.add(
+		HttpApiEndpoint.post("uploadAvatar", "/auth/me/avatar", {
+			disableCodecs: true,
+			success: UserProfile,
+			error: [NotFoundError, UploadError, DbError],
 		}).middleware(AuthMiddleware),
 	) {}

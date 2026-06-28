@@ -127,7 +127,7 @@ export const RestaurantUploadHandlers = HttpApiBuilder.group(
 					const url = yield* Effect.scoped(
 						uploader.uploadFromRequest(
 							request,
-							UploadFolder.restaurantLogo,
+							UploadFolder.restaurantBanner,
 							`banner-${params.id}`,
 						),
 					);
@@ -206,8 +206,8 @@ export const RestaurantUploadHandlers = HttpApiBuilder.group(
 					const url = yield* Effect.scoped(
 						uploader.uploadFromRequest(
 							request,
-							UploadFolder.restaurantLogo,
-							`item-${params.id}`,
+							UploadFolder.menuItem,
+							`item-${params.itemId}`,
 						),
 					);
 

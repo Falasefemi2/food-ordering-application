@@ -1,9 +1,11 @@
 import { Effect } from "effect";
+import { HttpServerRequest } from "effect/unstable/http/HttpServerRequest";
 import { HttpApiBuilder } from "effect/unstable/httpapi";
 import { Api } from "../api";
 import { AuthContext } from "../auth/auth-middleware";
 import { DispatchService } from "../dispatch/dispatch-service";
 import { ForbiddenError } from "../libs/errors";
+import { ImageUploadService, UploadFolder } from "../libs/imageservice";
 import { DriverService } from "./driver-service";
 
 export const DriverHandlers = HttpApiBuilder.group(
@@ -12,6 +14,7 @@ export const DriverHandlers = HttpApiBuilder.group(
 	Effect.fn(function* (handlers) {
 		const driverService = yield* DriverService;
 		const dispatchService = yield* DispatchService;
+		const uploader = yield* ImageUploadService;
 
 		const driverOnly = (role: string) =>
 			role === "driver"
@@ -21,6 +24,24 @@ export const DriverHandlers = HttpApiBuilder.group(
 							message: "Drivers only",
 						}),
 					);
+
+		const uploadDriverImage = (
+			field: "licenseImageUrl" | "vehicleImageUrl" | "nationalIdImageUrl",
+			folder: UploadFolder,
+			publicIdPrefix: string,
+		) =>
+			Effect.gen(function* () {
+				const { sub: userId, role } = yield* AuthContext;
+				yield* driverOnly(role);
+				const request = yield* HttpServerRequest;
+				const url = yield* Effect.scoped(
+					uploader.uploadFromRequest(request, folder, `${publicIdPrefix}-${userId}`),
+				);
+
+				return yield* driverService
+					.updateDocumentUrl(userId, field, url)
+					.pipe(Effect.catchTag("DbError", Effect.orDie));
+			});
 
 		return handlers
 			.handle("createDriverProfile", ({ payload }) =>
@@ -51,6 +72,26 @@ export const DriverHandlers = HttpApiBuilder.group(
 						.updateMyProfile(userId, payload)
 						.pipe(Effect.catchTag("DbError", Effect.orDie));
 				}),
+			)
+
+			.handle("uploadDriverLicenseImage", () =>
+				uploadDriverImage(
+					"licenseImageUrl",
+					UploadFolder.driverLicense,
+					"license",
+				),
+			)
+
+			.handle("uploadDriverVehicleImage", () =>
+				uploadDriverImage("vehicleImageUrl", UploadFolder.driverVehicle, "vehicle"),
+			)
+
+			.handle("uploadDriverNationalIdImage", () =>
+				uploadDriverImage(
+					"nationalIdImageUrl",
+					UploadFolder.driverNationalId,
+					"national-id",
+				),
 			)
 
 			.handle("updateDriverStatus", ({ payload }) =>

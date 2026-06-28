@@ -1,6 +1,8 @@
 import * as Effect from "effect/Effect";
+import { HttpServerRequest } from "effect/unstable/http/HttpServerRequest";
 import { HttpApiBuilder } from "effect/unstable/httpapi";
 import { Api } from "../api";
+import { ImageUploadService, UploadFolder } from "../libs/imageservice";
 import { clientKey, RateLimterService } from "../libs/ratelimit";
 import { AuthContext } from "./auth-middleware";
 import { AuthService } from "./auth-service";
@@ -11,6 +13,7 @@ export const AuthHandlers = HttpApiBuilder.group(
 	Effect.fn(function* (handlers) {
 		const auth = yield* AuthService;
 		const limiter = yield* RateLimterService;
+		const uploader = yield* ImageUploadService;
 
 		return handlers
 			.handle("register", ({ payload }) =>
@@ -57,10 +60,24 @@ export const AuthHandlers = HttpApiBuilder.group(
 					const { sub: id } = yield* AuthContext;
 					return yield* auth
 						.getMe(id)
-						.pipe(
-							Effect.catchTag("DbError", Effect.orDie),
-							Effect.catchTag("NotFoundError", Effect.orDie),
-						);
+						.pipe(Effect.catchTag("DbError", Effect.orDie));
+				}),
+			)
+			.handle("uploadAvatar", () =>
+				Effect.gen(function* () {
+					const { sub: id } = yield* AuthContext;
+					const request = yield* HttpServerRequest;
+					const url = yield* Effect.scoped(
+						uploader.uploadFromRequest(
+							request,
+							UploadFolder.userAvatar,
+							`avatar-${id}`,
+						),
+					);
+
+					return yield* auth
+						.updateAvatar(id, url)
+						.pipe(Effect.catchTag("DbError", Effect.orDie));
 				}),
 			);
 	}),
